@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D迷路ゲーム</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 16px;
+            z-index: 10;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1.6;
+        }
+
+        #mobileControls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 10;
+        }
+
+        .mobile-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 15px;
+            margin: 5px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .mobile-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        #modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            color: white;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-content h1 {
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .instructions {
+            text-align: left;
+            margin: 25px 0;
+            line-height: 1.8;
+        }
+
+        .instructions h3 {
+            margin: 15px 0 10px 0;
+            color: #ffeb3b;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .goal {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #ff4444;
+        }
+
+        .buttons {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            min-width: 120px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        .btn.tertiary {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+        }
+
+        #notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        #notification.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            #mobileControls {
+                display: block;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div>位置: <span id="position">(1, 1)</span></div>
+            <div>方向: <span id="direction">北</span></div>
+            <div>FPS: <span id="fps">60</span></div>
+            <div>操作: 矢印キー/WASD で移動</div>
+            <div>R: 新迷路 | Esc: メニュー</div>
+        </div>
+
+        <div id="mobileControls">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <button class="mobile-btn" id="forwardBtn">↑</button>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px;">
+                <button class="mobile-btn" id="leftBtn">←</button>
+                <button class="mobile-btn" id="backBtn">↓</button>
+                <button class="mobile-btn" id="rightBtn">→</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal">
+        <div class="modal-content">
+            <h1>3D迷路ゲーム</h1>
+            
+            <div class="instructions">
+                <h3>操作方法</h3>
+                <strong>PC:</strong>
+                <ul>
+                    <li>↑/W: 前進</li>
+                    <li>↓/S: 後退</li>
+                    <li>←/A: 左に90度回転</li>
+                    <li>→/D: 右に90度回転</li>
+                    <li>マウス: 視点操作 (クリックでポインターロック)</li>
+                    <li>R: 新しい迷路生成</li>
+                    <li>Esc: メニュー</li>
+                </ul>
+                
+                <strong>モバイル:</strong>
+                <ul>
+                    <li>画面下部のボタンで移動・回転</li>
+                    <li>画面をスワイプして移動・回転</li>
+                    <li>縦スワイプ: 前進・後退</li>
+                    <li>横スワイプ: 左右回転</li>
+                </ul>
+            </div>
+
+            <div class="goal">
+                <strong>目標:</strong><br>
+                スタート地点から回転する<span style="color: #ff4444;">赤いゴール</span>を目指そう！<br>
+                迷路は50×50の大きさで自動生成されます。
+            </div>
+
+            <div class="buttons">
+                <button class="btn" id="startGame">ゲームスタート</button>
+                <button class="btn secondary" id="newMaze">新しい迷路</button>
+                <button class="btn tertiary" id="settings">設定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification"></div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/maze-generator.js"></script>
+    <script src="js/game-engine.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
