@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D迷路ゲーム</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: Arial, sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #gameCanvas {
+            display: block;
+            cursor: grab;
+        }
+        
+        #gameCanvas:active {
+            cursor: grabbing;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+        
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            text-align: center;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #333;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        .modal-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .modal-btn:hover {
+            background: #45a049;
+        }
+        
+        @media (max-width: 768px) {
+            #controls {
+                display: block;
+            }
+            
+            #ui {
+                font-size: 12px;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div>位置: (<span id="playerX">1</span>, <span id="playerZ">1</span>)</div>
+            <div>FPS: <span id="fps">60</span></div>
+            <div id="status">矢印キー・WASD・マウスで移動</div>
+        </div>
+        
+        <div id="controls">
+            <div style="text-align: center; margin-bottom: 10px;">移動</div>
+            <div style="text-align: center;">
+                <button class="control-btn" id="btn-up">↑</button>
+            </div>
+            <div style="text-align: center;">
+                <button class="control-btn" id="btn-left">←</button>
+                <button class="control-btn" id="btn-down">↓</button>
+                <button class="control-btn" id="btn-right">→</button>
+            </div>
+        </div>
+        
+        <div id="loading">
+            <div class="spinner"></div>
+            <div>迷路を生成中...</div>
+        </div>
+        
+        <div id="modal">
+            <div class="modal-content">
+                <h2 id="modal-title">3D迷路ゲーム</h2>
+                <p id="modal-text">ゲームへようこそ！</p>
+                <button class="modal-btn" onclick="window.gameModal.close()">閉じる</button>
+                <button class="modal-btn" onclick="window.gameEngine.generateNewMaze()">新しい迷路</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/maze-generator.js"></script>
+    <script src="js/game-engine.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
