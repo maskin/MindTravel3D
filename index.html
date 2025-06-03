@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D迷路ゲーム</title>
+    <meta name="description" content="ウェブで動く3D迷路ゲーム">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            #controls {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .control-row {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                background: rgba(255, 255, 255, 0.2);
+                border: 2px solid white;
+                border-radius: 5px;
+                color: white;
+                font-size: 18px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                user-select: none;
+                touch-action: manipulation;
+            }
+            
+            .control-btn:active {
+                background: rgba(255, 255, 255, 0.4);
+            }
+        }
+        
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: #333;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+        
+        .modal-content button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .modal-content button:hover {
+            background: #45a049;
+        }
+        
+        #menuButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            border-radius: 5px;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>3D迷路ゲームを読み込み中...</p>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div>位置: <span id="position">(0, 0)</span></div>
+        <div>FPS: <span id="fps">60</span></div>
+        <div>矢印キーまたはタッチで移動</div>
+    </div>
+    
+    <button id="menuButton">Menu</button>
+    
+    <div id="controls">
+        <div class="control-row">
+            <button class="control-btn" data-key="up">↑</button>
+        </div>
+        <div class="control-row">
+            <button class="control-btn" data-key="left">←</button>
+            <button class="control-btn" data-key="down">↓</button>
+            <button class="control-btn" data-key="right">→</button>
+        </div>
+    </div>
+    
+    <div id="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">タイトル</h2>
+            <p id="modalText">メッセージ</p>
+            <button onclick="closeModal()">閉じる</button>
+            <button id="modalAction" onclick="modalAction()">アクション</button>
+        </div>
+    </div>
+    
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Game Scripts -->
+    <script src="js/maze-generator.js"></script>
+    <script src="js/game-engine.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        // PWA installation
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+        
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(err => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
