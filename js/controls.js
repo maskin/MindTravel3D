@@ -1,7 +1,9 @@
 // 3D迷路ゲーム - 操作システム
 class Controls {
-    constructor(gameEngine) {
+    constructor(gameEngine, gameManager, uiManager) {
         this.gameEngine = gameEngine;
+        this.gameManager = gameManager;
+        this.uiManager = uiManager;
         this.keys = {};
         this.isPointerLocked = false;
         this.mouse = { x: 0, y: 0 };
@@ -10,9 +12,7 @@ class Controls {
         this.init();
     }
     
-    init() {
-        console.log('操作システム初期化...');
-        
+    init() {        
         // キーボードイベント
         document.addEventListener('keydown', (e) => this.onKeyDown(e));
         document.addEventListener('keyup', (e) => this.onKeyUp(e));
@@ -34,8 +34,6 @@ class Controls {
                 this.gameEngine.handleResize();
             }
         });
-        
-        console.log('操作システム初期化完了');
     }
     
     onKeyDown(event) {
@@ -65,11 +63,11 @@ class Controls {
                 event.preventDefault();
                 break;
             case 'KeyR':
-                window.gameManager.generateNewMaze();
+                this.gameManager.generateNewMaze();
                 event.preventDefault();
                 break;
             case 'Escape':
-                window.uiManager.toggleMenu();
+                this.uiManager.toggleMenu();
                 event.preventDefault();
                 break;
         }
@@ -110,12 +108,7 @@ class Controls {
             this.gameEngine.playerRotation += movementX * this.mouseSpeed;
             
             // 角度を正規化
-            while (this.gameEngine.playerRotation < 0) {
-                this.gameEngine.playerRotation += Math.PI * 2;
-            }
-            while (this.gameEngine.playerRotation >= Math.PI * 2) {
-                this.gameEngine.playerRotation -= Math.PI * 2;
-            }
+            this.gameEngine.playerRotation = (this.gameEngine.playerRotation % (Math.PI * 2) + (Math.PI * 2)) % (Math.PI * 2);
             
             this.gameEngine.updateCameraPosition();
         }

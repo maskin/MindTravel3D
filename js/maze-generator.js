@@ -19,7 +19,6 @@ class MazeGenerator {
     }
     
     generateMaze() {
-        console.log('迷路生成開始...');
         this.initialize();
         
         // Recursive Backtrackingアルゴリズム
@@ -79,7 +78,6 @@ class MazeGenerator {
         if (goalX > 1) this.maze[goalY][goalX - 1] = 0;
         if (goalY > 1) this.maze[goalY - 1][goalX] = 0;
         
-        console.log('迷路生成完了');
         return this.maze;
     }
     
@@ -126,7 +124,6 @@ class MazeGenerator {
                     row += this.maze[y][x] === 1 ? '█' : ' ';
                 }
             }
-            console.log(row);
         }
     }
 }

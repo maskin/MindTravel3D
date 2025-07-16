@@ -29,8 +29,6 @@ class GameEngine {
     }
     
     async init() {
-        console.log('3Dエンジン初期化開始...');
-        
         try {
             // Three.jsの確認
             if (typeof THREE === 'undefined') {
@@ -42,7 +40,6 @@ class GameEngine {
             this.initCamera();
             this.initLights();
             
-            console.log('3Dエンジン初期化完了');
             return true;
         } catch (error) {
             console.error('3Dエンジン初期化エラー:', error);
@@ -106,8 +103,6 @@ class GameEngine {
     }
     
     async createMaze(mazeData) {
-        console.log('3D迷路作成開始...');
-        
         // 既存の迷路オブジェクトを削除
         this.clearMaze();
         
@@ -141,8 +136,6 @@ class GameEngine {
         
         // ゴールの作成
         this.createGoal(mazeData[0].length - 2, mazeData.length - 2);
-        
-        console.log('3D迷路作成完了');
     }
     
     createGoal(x, z) {

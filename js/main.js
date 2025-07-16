@@ -8,16 +8,13 @@ class GameManager {
         this.isInitialized = false;
     }
     
-    async init() {
-        console.log('ゲーム管理システム初期化開始...');
-        
+    async init() {        
         try {
             // エラーハンドリング設定
             this.setupErrorHandling();
             
             // UIマネージャー初期化
             this.uiManager = new UIManager();
-            window.uiManager = this.uiManager;
             
             // 3Dエンジン初期化
             this.gameEngine = new GameEngine();
@@ -31,7 +28,7 @@ class GameManager {
             this.mazeGenerator = new MazeGenerator(50, 50);
             
             // 操作システム初期化
-            this.controls = new Controls(this.gameEngine);
+            this.controls = new Controls(this.gameEngine, this, this.uiManager);
             
             // PWA設定
             this.initPWA();
@@ -40,7 +37,6 @@ class GameManager {
             this.gameEngine.animate();
             
             this.isInitialized = true;
-            console.log('ゲーム管理システム初期化完了');
             
             // スタートメニュー表示
             this.uiManager.showStartMenu();
@@ -76,8 +72,6 @@ class GameManager {
         }
         
         try {
-            console.log('ゲーム開始...');
-            
             // ローディング表示
             this.uiManager.showLoading('迷路生成中...');
             
@@ -104,8 +98,6 @@ class GameManager {
             this.uiManager.hideStartMenu();
             this.uiManager.closeModal();
             
-            console.log('ゲーム開始完了');
-            
         } catch (error) {
             console.error('ゲーム開始エラー:', error);
             this.uiManager.showError('ゲームの開始に失敗しました:\n' + error.message);
@@ -116,8 +108,6 @@ class GameManager {
         if (!this.isInitialized || !this.gameEngine.isGameStarted) return;
         
         try {
-            console.log('新しい迷路生成...');
-            
             // ローディング表示
             this.uiManager.showLoading('新しい迷路生成中...');
             
@@ -139,8 +129,6 @@ class GameManager {
             // ローディング終了
             this.uiManager.closeModal();
             
-            console.log('新しい迷路生成完了');
-            
         } catch (error) {
             console.error('迷路生成エラー:', error);
             this.uiManager.showError('迷路の生成に失敗しました:\n' + error.message);
@@ -152,10 +140,10 @@ class GameManager {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
                 .then(registration => {
-                    console.log('Service Worker 登録成功:', registration);
+                    // Service Worker registration successful
                 })
                 .catch(error => {
-                    console.log('Service Worker 登録失敗:', error);
+                    console.error('Service Worker 登録失敗:', error);
                 });
         }
         
@@ -166,36 +154,46 @@ class GameManager {
             deferredPrompt = e;
             
             // インストールボタンを表示する場合はここで実装
-            console.log('PWA インストール可能');
         });
         
         // インストール完了
         window.addEventListener('appinstalled', (evt) => {
-            console.log('PWA インストール完了');
+            // PWA installed
         });
     }
 }
 
 // ゲーム初期化
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM読み込み完了 - ゲーム初期化開始...');
-    
     // グローバルゲームマネージャー作成
-    window.gameManager = new GameManager();
+    const gameManager = new GameManager();
     
     // 初期化実行
-    await window.gameManager.init();
+    await gameManager.init();
+    
+    // グローバル関数定義
+    window.startGame = function() {
+        gameManager.startGame();
+    };
+    
+    window.generateNewMaze = function() {
+        gameManager.generateNewMaze();
+    };
+    
+    window.showControls = function() {
+        if (gameManager.uiManager) {
+            gameManager.uiManager.showControls();
+        }
+    };
+    
+    window.closeModal = function() {
+        if (gameManager.uiManager) {
+            gameManager.uiManager.closeModal();
+        }
+    };
 });
 
 // デバッグ用
 window.debugInfo = () => {
-    if (window.gameManager && window.gameManager.gameEngine) {
-        const engine = window.gameManager.gameEngine;
-        console.log('プレイヤー位置:', engine.playerPosition);
-        console.log('プレイヤー回転:', engine.playerRotation);
-        console.log('ゲーム状態:', {
-            isGameStarted: engine.isGameStarted,
-            gameWon: engine.gameWon
-        });
-    }
+    // Debug function can be accessed through developer console if needed
 };

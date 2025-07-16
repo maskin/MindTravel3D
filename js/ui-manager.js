@@ -9,8 +9,6 @@ class UIManager {
     }
     
     init() {
-        console.log('UI管理システム初期化...');
-        
         // DOM要素の取得
         this.startMenu = document.getElementById('startMenu');
         this.gameModal = document.getElementById('gameModal');
@@ -21,8 +19,6 @@ class UIManager {
             console.error('必要なUI要素が見つかりません');
             return;
         }
-        
-        console.log('UI管理システム初期化完了');
     }
     
     showStartMenu() {
@@ -108,27 +104,6 @@ class UIManager {
     
     showLoading(message) {
         this.showModal('読み込み中', message || '処理中です...');
-    }
-}
-
-// グローバル関数
-function startGame() {
-    if (window.gameManager) {
-        window.gameManager.startGame();
-    } else {
-        console.error('gameManager が見つかりません');
-    }
-}
-
-function showControls() {
-    if (window.uiManager) {
-        window.uiManager.showControls();
-    }
-}
-
-function closeModal() {
-    if (window.uiManager) {
-        window.uiManager.closeModal();
     }
 }
 
