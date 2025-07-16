@@ -384,8 +384,7 @@ class GameEngine {
     
     newGame() {
         this.gameWon = false;
-        this.playerPosition = { x: 1, z: 1 };
-        this.playerRotation = 0;
+        // Don't reset position here - it should be set by caller with proper centering
         this.updateCameraPosition();
     }
 }

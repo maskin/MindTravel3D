@@ -91,14 +91,14 @@ class GameManager {
             // 3D迷路作成
             await this.gameEngine.createMaze(mazeData);
             
-            // プレイヤー位置設定
+            // プレイヤー位置設定 (center player in maze cell)
             const startPos = this.mazeGenerator.getStartPosition();
-            this.gameEngine.setPlayerPosition(startPos.x, startPos.y);
+            this.gameEngine.setPlayerPosition(startPos.x + 0.5, startPos.y + 0.5);
             this.gameEngine.setPlayerRotation(0);
             
             // ゲーム状態設定
             this.gameEngine.isGameStarted = true;
-            this.gameEngine.newGame();
+            this.gameEngine.gameWon = false;
             
             // UI更新
             this.uiManager.hideStartMenu();
@@ -130,11 +130,11 @@ class GameManager {
             // 3D迷路再作成
             await this.gameEngine.createMaze(mazeData);
             
-            // プレイヤーをスタート位置にリセット
+            // プレイヤーをスタート位置にリセット (center player in maze cell)
             const startPos = this.mazeGenerator.getStartPosition();
-            this.gameEngine.setPlayerPosition(startPos.x, startPos.y);
+            this.gameEngine.setPlayerPosition(startPos.x + 0.5, startPos.y + 0.5);
             this.gameEngine.setPlayerRotation(0);
-            this.gameEngine.newGame();
+            this.gameEngine.gameWon = false;
             
             // ローディング終了
             this.uiManager.closeModal();
