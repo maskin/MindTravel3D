@@ -112,10 +112,10 @@ class GameEngine {
         this.clearMaze();
         
         const wallGeometry = new THREE.BoxGeometry(1, 3, 1);
-        const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 });
+        const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x808080, wireframe: true });
         
         const floorGeometry = new THREE.PlaneGeometry(1, 1);
-        const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x202020 });
+        const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x202020, wireframe: true });
         
         // 迷路の作成
         for (let y = 0; y < mazeData.length; y++) {
@@ -150,7 +150,8 @@ class GameEngine {
         const goalGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
         const goalMaterial = new THREE.MeshLambertMaterial({ 
             color: 0xff0000,
-            emissive: 0x330000
+            emissive: 0x330000,
+            wireframe: true
         });
         
         this.goal = new THREE.Mesh(goalGeometry, goalMaterial);
