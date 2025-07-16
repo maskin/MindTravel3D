@@ -187,6 +187,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     await window.gameManager.init();
 });
 
+// ウィンドウリサイズ処理
+window.addEventListener('resize', () => {
+    if (window.gameManager && window.gameManager.gameEngine) {
+        window.gameManager.gameEngine.handleResize();
+    }
+});
+
 // デバッグ用
 window.debugInfo = () => {
     if (window.gameManager && window.gameManager.gameEngine) {
