@@ -56,6 +56,9 @@ class GameEngine {
             throw new Error('Canvas要素が見つかりません');
         }
         
+        console.log('Canvas found:', canvas);
+        console.log('Canvas computed style:', window.getComputedStyle(canvas));
+        
         this.renderer = new THREE.WebGLRenderer({ 
             canvas: canvas,
             antialias: true,
@@ -68,6 +71,18 @@ class GameEngine {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.fog = true;
+        
+        // Test canvas immediately
+        console.log('Testing canvas rendering...');
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(50, 50, 100, 100);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '20px Arial';
+            ctx.fillText('CANVAS TEST', 60, 110);
+            console.log('Canvas test completed - green square and text drawn');
+        }
     }
     
     initScene() {
