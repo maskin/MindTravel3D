@@ -56,6 +56,9 @@ class GameEngine {
             throw new Error('Canvas要素が見つかりません');
         }
         
+        console.log('Canvas found:', canvas);
+        console.log('Canvas computed style:', window.getComputedStyle(canvas));
+        
         this.renderer = new THREE.WebGLRenderer({ 
             canvas: canvas,
             antialias: true,
@@ -68,6 +71,18 @@ class GameEngine {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.fog = true;
+        
+        // Test canvas immediately
+        console.log('Testing canvas rendering...');
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(50, 50, 100, 100);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '20px Arial';
+            ctx.fillText('CANVAS TEST', 60, 110);
+            console.log('Canvas test completed - green square and text drawn');
+        }
     }
     
     initScene() {
@@ -86,21 +101,29 @@ class GameEngine {
     }
     
     initLights() {
-        // 環境光（弱め）
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+        // 環境光を明るくして全体を照らす
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
         this.scene.add(ambientLight);
         
-        // プレイヤーのライト（懐中電灯効果）
-        this.playerLight = new THREE.SpotLight(0xffffff, 1.0, 20, Math.PI / 6, 0.5);
+        // プレイヤーのライト（懐中電灯効果）を強化
+        this.playerLight = new THREE.SpotLight(0xffffff, 1.5, 25, Math.PI / 4, 0.3);
         this.playerLight.castShadow = true;
         this.playerLight.shadow.mapSize.width = 1024;
         this.playerLight.shadow.mapSize.height = 1024;
         this.playerLight.shadow.camera.near = 0.1;
-        this.playerLight.shadow.camera.far = 20;
+        this.playerLight.shadow.camera.far = 25;
         this.scene.add(this.playerLight);
         
+        // 追加の方向光で全体的な明るさを確保
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight.position.set(10, 10, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        this.scene.add(directionalLight);
+        
         // ゴールライト
-        this.goalLight = new THREE.PointLight(0xff0000, 0.8, 15);
+        this.goalLight = new THREE.PointLight(0xff0000, 1.0, 20);
         this.goalLight.position.set(0, 3, 0);
         this.lights.push(this.goalLight);
     }
@@ -111,11 +134,19 @@ class GameEngine {
         // 既存の迷路オブジェクトを削除
         this.clearMaze();
         
+        // 壁の材質を改善 - 石のような質感の灰色の壁
         const wallGeometry = new THREE.BoxGeometry(1, 3, 1);
-        const wallMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+        const wallMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x888888,
+            transparent: false
+        });
         
+        // 床の材質を改善 - 暗い茶色の床
         const floorGeometry = new THREE.PlaneGeometry(1, 1);
-        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+        const floorMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x333333,
+            transparent: false
+        });
         
         // 迷路の作成
         for (let y = 0; y < mazeData.length; y++) {
@@ -146,12 +177,12 @@ class GameEngine {
     }
     
     createGoal(x, z) {
-        // ゴールオブジェクト（回転する赤い円柱）
+        // ゴールオブジェクト（回転する赤い円柱）- 材質を改善
         const goalGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
-        const goalMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xff0000,
-            emissive: 0x330000,
-            wireframe: true
+        const goalMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xff4444,
+            emissive: 0x220000,
+            transparent: false
         });
         
         this.goal = new THREE.Mesh(goalGeometry, goalMaterial);
@@ -368,8 +399,7 @@ class GameEngine {
     
     newGame() {
         this.gameWon = false;
-        this.playerPosition = { x: 1, z: 1 };
-        this.playerRotation = 0;
+        // Don't reset position here - it should be set by caller with proper centering
         this.updateCameraPosition();
     }
 }
