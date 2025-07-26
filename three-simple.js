@@ -302,14 +302,9 @@
         const width = this.canvas.width;
         const height = this.canvas.height;
         
-        // Clear canvas
+        // Clear canvas with dark background
         ctx.fillStyle = `rgb(${Math.floor(this.clearColor.r * 255)}, ${Math.floor(this.clearColor.g * 255)}, ${Math.floor(this.clearColor.b * 255)})`;
         ctx.fillRect(0, 0, width, height);
-        
-        // Simple 3D to 2D projection
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const scale = 15;
         
         // Camera info
         const camX = camera.position.x;
@@ -322,68 +317,102 @@
             viewAngle = Math.atan2(camera.lookDirection.x, camera.lookDirection.z);
         }
         
-        // Render objects
-        const objectsToRender = [];
-        scene.traverse((object) => {
-            if (object.geometry && object.material && object.visible) {
-                objectsToRender.push(object);
-            }
-        });
+        // First-person perspective rendering
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const maxDistance = 8; // How far we can see
+        const rayCount = width; // One ray per horizontal pixel for smooth walls
         
-        // Sort by distance from camera
-        objectsToRender.sort((a, b) => {
-            const distA = Math.sqrt(Math.pow(a.position.x - camX, 2) + Math.pow(a.position.z - camZ, 2));
-            const distB = Math.sqrt(Math.pow(b.position.x - camX, 2) + Math.pow(b.position.z - camZ, 2));
-            return distB - distA; // Far to near
-        });
-        
-        // Render each object
-        objectsToRender.forEach((object) => {
-            const dx = object.position.x - camX;
-            const dz = object.position.z - camZ;
-            const distance = Math.sqrt(dx * dx + dz * dz);
+        // Cast rays for each column of pixels
+        for (let x = 0; x < width; x++) {
+            // Calculate ray angle for this column
+            const rayAngle = viewAngle + (x - centerX) * (Math.PI / 3) / width; // 60-degree FOV
             
-            if (distance > 20) return; // Skip distant objects
+            // Ray direction
+            const rayDx = Math.sin(rayAngle);
+            const rayDz = Math.cos(rayAngle);
             
-            // Simple perspective projection
-            const relativeAngle = Math.atan2(dx, dz) - viewAngle;
-            const projectedX = centerX + Math.sin(relativeAngle) * distance * scale;
-            const projectedY = centerY - (object.position.y - camY) * scale / (1 + distance * 0.1);
+            // Cast ray to find wall
+            let distance = 0;
+            let hitWall = false;
+            let isGoal = false;
+            let wallColor = '#cccccc';
             
-            // Set color based on material
-            let colorHex = 0xffffff;
-            if (object.material && object.material.color) {
-                colorHex = (Math.floor(object.material.color.r * 255) << 16) |
-                          (Math.floor(object.material.color.g * 255) << 8) |
-                          Math.floor(object.material.color.b * 255);
+            for (let step = 0; step < maxDistance * 20; step++) {
+                distance = step * 0.05;
+                const testX = camX + rayDx * distance;
+                const testZ = camZ + rayDz * distance;
+                
+                const gridX = Math.floor(testX);
+                const gridZ = Math.floor(testZ);
+                
+                // Check if we hit a wall
+                let hitObstacle = false;
+                
+                // Check maze walls
+                scene.traverse((object) => {
+                    if (object.geometry && object.geometry.type === 'BoxGeometry' && 
+                        Math.floor(object.position.x) === gridX && 
+                        Math.floor(object.position.z) === gridZ) {
+                        hitObstacle = true;
+                        if (object.material && object.material.color) {
+                            const c = object.material.color;
+                            wallColor = `rgb(${Math.floor(c.r * 255)}, ${Math.floor(c.g * 255)}, ${Math.floor(c.b * 255)})`;
+                        }
+                    }
+                    
+                    // Check if we hit the goal
+                    if (object.geometry && object.geometry.type === 'CylinderGeometry' && 
+                        Math.abs(object.position.x - testX) < 0.5 && 
+                        Math.abs(object.position.z - testZ) < 0.5) {
+                        hitObstacle = true;
+                        isGoal = true;
+                        wallColor = '#ff4444';
+                    }
+                });
+                
+                if (hitObstacle || distance >= maxDistance) {
+                    hitWall = true;
+                    break;
+                }
             }
+            
+            // Calculate wall height based on distance
+            const wallHeight = Math.min(height, height / (distance + 0.1));
+            const wallTop = centerY - wallHeight / 2;
+            const wallBottom = centerY + wallHeight / 2;
             
             // Apply distance fog
-            const fogFactor = Math.max(0, 1 - distance / 15);
-            const r = Math.floor((colorHex >> 16) & 255);
-            const g = Math.floor((colorHex >> 8) & 255);
-            const b = Math.floor(colorHex & 255);
+            const fogFactor = Math.max(0, 1 - distance / maxDistance);
+            const baseColor = wallColor === '#ff4444' ? [255, 68, 68] : 
+                             wallColor === '#cccccc' ? [204, 204, 204] : [68, 68, 68];
             
-            const foggedR = Math.floor(r * fogFactor + this.clearColor.r * 255 * (1 - fogFactor));
-            const foggedG = Math.floor(g * fogFactor + this.clearColor.g * 255 * (1 - fogFactor));
-            const foggedB = Math.floor(b * fogFactor + this.clearColor.b * 255 * (1 - fogFactor));
+            const foggedR = Math.floor(baseColor[0] * fogFactor + this.clearColor.r * 255 * (1 - fogFactor));
+            const foggedG = Math.floor(baseColor[1] * fogFactor + this.clearColor.g * 255 * (1 - fogFactor));
+            const foggedB = Math.floor(baseColor[2] * fogFactor + this.clearColor.b * 255 * (1 - fogFactor));
             
+            // Draw wall column
             ctx.fillStyle = `rgb(${foggedR}, ${foggedG}, ${foggedB})`;
+            ctx.fillRect(x, wallTop, 1, wallBottom - wallTop);
             
-            // Render based on geometry type
-            if (object.geometry.type === 'BoxGeometry') {
-                const size = Math.max(5, 30 / (1 + distance * 0.3));
-                ctx.fillRect(projectedX - size/2, projectedY - size, size, size * 2);
-            } else if (object.geometry.type === 'PlaneGeometry') {
-                const size = Math.max(3, 20 / (1 + distance * 0.2));
-                ctx.fillRect(projectedX - size/2, projectedY - size/2, size, size);
-            } else if (object.geometry.type === 'CylinderGeometry') {
-                const size = Math.max(4, 25 / (1 + distance * 0.3));
-                ctx.beginPath();
-                ctx.arc(projectedX, projectedY, size/2, 0, Math.PI * 2);
-                ctx.fill();
+            // Draw floor
+            if (wallBottom < height) {
+                const floorGradient = ctx.createLinearGradient(0, wallBottom, 0, height);
+                floorGradient.addColorStop(0, '#004400');
+                floorGradient.addColorStop(1, '#002200');
+                ctx.fillStyle = floorGradient;
+                ctx.fillRect(x, wallBottom, 1, height - wallBottom);
             }
-        });
+            
+            // Draw ceiling
+            if (wallTop > 0) {
+                const ceilingGradient = ctx.createLinearGradient(0, 0, 0, wallTop);
+                ceilingGradient.addColorStop(0, '#222222');
+                ceilingGradient.addColorStop(1, '#111111');
+                ctx.fillStyle = ceilingGradient;
+                ctx.fillRect(x, 0, 1, wallTop);
+            }
+        }
         
         // Draw crosshair
         ctx.strokeStyle = '#ffffff';
@@ -395,11 +424,79 @@
         ctx.lineTo(centerX, centerY + 10);
         ctx.stroke();
         
-        // Draw position info
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px Arial';
-        ctx.fillText(`Position: (${camX.toFixed(1)}, ${camZ.toFixed(1)})`, 10, 30);
-        ctx.fillText(`Angle: ${(viewAngle * 180 / Math.PI).toFixed(0)}°`, 10, 50);
+        // Draw mini-map in top-right corner
+        this.drawMiniMap(ctx, scene, camera, width - 120, 10, 100, 100);
+    };
+    
+    WebGLRenderer.prototype.drawMiniMap = function(ctx, scene, camera, x, y, w, h) {
+        // Save context
+        ctx.save();
+        
+        // Create clipping region for mini-map
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.clip();
+        
+        // Fill background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(x, y, w, h);
+        
+        // Calculate map scale
+        const mapScale = 2; // cells per pixel
+        const centerX = x + w / 2;
+        const centerY = y + h / 2;
+        
+        // Draw maze walls
+        scene.traverse((object) => {
+            if (object.geometry && object.geometry.type === 'BoxGeometry') {
+                const mapX = centerX + (object.position.x - camera.position.x) / mapScale;
+                const mapZ = centerY + (object.position.z - camera.position.z) / mapScale;
+                
+                if (mapX >= x && mapX <= x + w && mapZ >= y && mapZ <= y + h) {
+                    ctx.fillStyle = '#888888';
+                    ctx.fillRect(mapX - 1, mapZ - 1, 2, 2);
+                }
+            }
+            
+            // Draw goal
+            if (object.geometry && object.geometry.type === 'CylinderGeometry') {
+                const mapX = centerX + (object.position.x - camera.position.x) / mapScale;
+                const mapZ = centerY + (object.position.z - camera.position.z) / mapScale;
+                
+                if (mapX >= x && mapX <= x + w && mapZ >= y && mapZ <= y + h) {
+                    ctx.fillStyle = '#ff4444';
+                    ctx.beginPath();
+                    ctx.arc(mapX, mapZ, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        });
+        
+        // Draw player position and direction
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw direction arrow
+        const dirLength = 8;
+        const dirAngle = Math.atan2(camera.lookDirection.x, camera.lookDirection.z);
+        const dirEndX = centerX + Math.sin(dirAngle) * dirLength;
+        const dirEndY = centerY + Math.cos(dirAngle) * dirLength;
+        
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(dirEndX, dirEndY);
+        ctx.stroke();
+        
+        // Draw border
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, w, h);
+        
+        // Restore context
+        ctx.restore();
     };
     
     // Constants

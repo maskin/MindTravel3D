@@ -93,10 +93,6 @@ class GameManager {
             
             // プレイヤー位置設定 (center player in maze cell)
             const startPos = this.mazeGenerator.getStartPosition();
-            console.log(`Start position from maze generator: (${startPos.x}, ${startPos.y})`);
-            console.log(`Is start position a wall? ${this.mazeGenerator.isWall(startPos.x, startPos.y)}`);
-            console.log(`Maze cell [1][1]: ${this.mazeGenerator.maze[1][1]}, [1][0]: ${this.mazeGenerator.maze[1][0]}, [0][1]: ${this.mazeGenerator.maze[0][1]}`);
-            
             this.gameEngine.setPlayerPosition(startPos.x + 0.5, startPos.y + 0.5);
             this.gameEngine.setPlayerRotation(0);
             

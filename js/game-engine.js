@@ -263,26 +263,19 @@ class GameEngine {
                 break;
         }
         
-        console.log(`Movement attempt: ${direction}, current: (${this.playerPosition.x}, ${this.playerPosition.z}), target: (${newX}, ${newZ}), rotation: ${this.playerRotation}`);
-        
         // 衝突判定 - 移動先のセルが通路かチェック
         const targetGridX = Math.floor(newX);
         const targetGridZ = Math.floor(newZ);
-        
-        console.log(`Target grid: (${targetGridX}, ${targetGridZ})`);
         
         if (this.maze && !this.maze.isWall(targetGridX, targetGridZ)) {
             // セルの中央に移動
             this.playerPosition.x = targetGridX + 0.5;
             this.playerPosition.z = targetGridZ + 0.5;
             this.updateCameraPosition();
-            console.log(`Movement successful to: (${this.playerPosition.x}, ${this.playerPosition.z})`);
             
             // ゴール判定
             this.checkGoal();
             return true;
-        } else {
-            console.log(`Movement blocked: target cell (${targetGridX}, ${targetGridZ}) is a wall`);
         }
         
         return false;
