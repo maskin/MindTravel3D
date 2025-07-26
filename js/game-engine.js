@@ -30,12 +30,28 @@ class GameEngine {
     
     async init() {
         console.log('3Dエンジン初期化開始...');
+        console.log('Browser info:', {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            cookieEnabled: navigator.cookieEnabled,
+            onLine: navigator.onLine
+        });
         
         try {
             // Three.jsの確認
+            console.log('THREE availability check:', typeof THREE);
             if (typeof THREE === 'undefined') {
+                console.error('THREE is undefined - script loading failed');
                 throw new Error('Three.js が読み込まれていません');
             }
+            
+            console.log('THREE object keys:', Object.keys(THREE));
+            console.log('Required THREE components available:', {
+                Scene: typeof THREE.Scene,
+                PerspectiveCamera: typeof THREE.PerspectiveCamera,
+                WebGLRenderer: typeof THREE.WebGLRenderer,
+                Vector3: typeof THREE.Vector3
+            });
             
             this.initRenderer();
             this.initScene();
@@ -45,7 +61,13 @@ class GameEngine {
             console.log('3Dエンジン初期化完了');
             return true;
         } catch (error) {
-            console.error('3Dエンジン初期化エラー:', error);
+            console.error('3Dエンジン初期化エラー - 詳細情報:', {
+                error: error,
+                message: error.message,
+                stack: error.stack,
+                THREEDefined: typeof THREE,
+                canvasExists: !!document.getElementById('gameCanvas')
+            });
             return false;
         }
     }
@@ -57,31 +79,55 @@ class GameEngine {
         }
         
         console.log('Canvas found:', canvas);
+        console.log('Canvas details:', {
+            id: canvas.id,
+            width: canvas.width,
+            height: canvas.height,
+            clientWidth: canvas.clientWidth,
+            clientHeight: canvas.clientHeight,
+            offsetWidth: canvas.offsetWidth,
+            offsetHeight: canvas.offsetHeight
+        });
         console.log('Canvas computed style:', window.getComputedStyle(canvas));
         
-        this.renderer = new THREE.WebGLRenderer({ 
-            canvas: canvas,
-            antialias: true,
-            alpha: false
-        });
-        
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.setClearColor(0x000000);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.fog = true;
-        
-        // Test canvas immediately
-        console.log('Testing canvas rendering...');
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(50, 50, 100, 100);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '20px Arial';
-            ctx.fillText('CANVAS TEST', 60, 110);
-            console.log('Canvas test completed - green square and text drawn');
+        try {
+            console.log('Creating THREE.WebGLRenderer...');
+            this.renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
+                antialias: true,
+                alpha: false
+            });
+            console.log('THREE.WebGLRenderer created successfully:', this.renderer);
+            
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            this.renderer.setClearColor(0x000000);
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            this.renderer.fog = true;
+            
+            // Test canvas immediately
+            console.log('Testing canvas rendering...');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(50, 50, 100, 100);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px Arial';
+                ctx.fillText('CANVAS TEST', 60, 110);
+                console.log('Canvas test completed - green square and text drawn');
+            } else {
+                console.warn('Could not get 2D context for canvas test');
+            }
+        } catch (error) {
+            console.error('Error in initRenderer:', {
+                error: error,
+                message: error.message,
+                stack: error.stack,
+                canvasState: canvas ? 'exists' : 'null',
+                THREEWebGLRenderer: typeof THREE.WebGLRenderer
+            });
+            throw error;
         }
     }
     

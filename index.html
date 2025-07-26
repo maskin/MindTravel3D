@@ -11,7 +11,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
     
     <!-- Three.js Local -->
-    <script src="three.min.js"></script>
+    <script src="three.min.js?v=2024-12-19-02"></script>
     
     <style>
         * {
@@ -245,10 +245,22 @@
     </div>
 
     <!-- Game Scripts -->
-    <script src="js/maze-generator.js"></script>
-    <script src="js/game-engine.js"></script>
-    <script src="js/controls.js"></script>
-    <script src="js/ui-manager.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/maze-generator.js?v=2024-12-19-02"></script>
+    <script src="js/game-engine.js?v=2024-12-19-02"></script>
+    <script src="js/controls.js?v=2024-12-19-02"></script>
+    <script src="js/ui-manager.js?v=2024-12-19-02"></script>
+    <script src="js/main.js?v=2024-12-19-02"></script>
+    
+    <!-- Script loading verification -->
+    <script>
+        console.log('Script loading verification:', {
+            THREE: typeof THREE,
+            MazeGenerator: typeof MazeGenerator,
+            GameEngine: typeof GameEngine,
+            Controls: typeof Controls,
+            UIManager: typeof UIManager,
+            GameManager: typeof GameManager
+        });
+    </script>
 </body>
 </html>
