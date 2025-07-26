@@ -87,43 +87,51 @@ class GameEngine {
     
     initScene() {
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0x000000, 5, 25);
+        // Improved atmospheric fog for better depth perception
+        this.scene.fog = new THREE.Fog(0x000011, 3, 15);
     }
     
     initCamera() {
         this.camera = new THREE.PerspectiveCamera(
-            75, 
+            90, // Wider field of view for more immersive experience
             window.innerWidth / window.innerHeight, 
             0.1, 
-            1000
+            50 // Reduced far plane for better fog effect
         );
         this.updateCameraPosition();
     }
     
     initLights() {
-        // 環境光を明るくして全体を照らす
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        // Reduced ambient light for more dramatic atmosphere
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
         this.scene.add(ambientLight);
         
-        // プレイヤーのライト（懐中電灯効果）を強化
-        this.playerLight = new THREE.SpotLight(0xffffff, 1.5, 25, Math.PI / 4, 0.3);
+        // Enhanced player light (flashlight effect) for immersive experience
+        this.playerLight = new THREE.SpotLight(0xffffcc, 2.5, 12, Math.PI / 3, 0.4);
         this.playerLight.castShadow = true;
         this.playerLight.shadow.mapSize.width = 1024;
         this.playerLight.shadow.mapSize.height = 1024;
         this.playerLight.shadow.camera.near = 0.1;
-        this.playerLight.shadow.camera.far = 25;
+        this.playerLight.shadow.camera.far = 12;
         this.scene.add(this.playerLight);
         
-        // 追加の方向光で全体的な明るさを確保
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight.position.set(10, 10, 5);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048;
-        directionalLight.shadow.mapSize.height = 2048;
-        this.scene.add(directionalLight);
+        // Add subtle overhead lighting for depth
+        const topLight = new THREE.DirectionalLight(0x6666aa, 0.3);
+        topLight.position.set(0, 10, 0);
+        topLight.castShadow = false; // Keep performance good
+        this.scene.add(topLight);
         
-        // ゴールライト
-        this.goalLight = new THREE.PointLight(0xff0000, 1.0, 20);
+        // Add some atmospheric side lighting
+        const sideLight1 = new THREE.DirectionalLight(0x4444aa, 0.2);
+        sideLight1.position.set(10, 5, 10);
+        this.scene.add(sideLight1);
+        
+        const sideLight2 = new THREE.DirectionalLight(0x4444aa, 0.2);
+        sideLight2.position.set(-10, 5, -10);
+        this.scene.add(sideLight2);
+        
+        // Enhanced goal light with more dramatic effect
+        this.goalLight = new THREE.PointLight(0xff3333, 2.0, 15);
         this.goalLight.position.set(0, 3, 0);
         this.lights.push(this.goalLight);
     }
@@ -134,17 +142,114 @@ class GameEngine {
         // 既存の迷路オブジェクトを削除
         this.clearMaze();
         
-        // 壁の材質を改善 - 石のような質感の灰色の壁
+        // Create procedural textures for more realistic appearance
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        
+        // Create stone-like wall texture
+        ctx.fillStyle = '#666666';
+        ctx.fillRect(0, 0, 128, 128);
+        
+        // Add stone block pattern
+        ctx.strokeStyle = '#444444';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 128; i += 32) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(128, i);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, 128);
+            ctx.stroke();
+        }
+        
+        // Add random noise for texture
+        for (let i = 0; i < 200; i++) {
+            ctx.fillStyle = Math.random() > 0.5 ? '#777777' : '#555555';
+            ctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
+        }
+        
+        const wallTexture = new THREE.CanvasTexture(canvas);
+        wallTexture.wrapS = THREE.RepeatWrapping;
+        wallTexture.wrapT = THREE.RepeatWrapping;
+        wallTexture.repeat.set(1, 1);
+        
+        // Enhanced wall material with texture and better lighting response
         const wallGeometry = new THREE.BoxGeometry(1, 3, 1);
-        const wallMaterial = new THREE.MeshLambertMaterial({ 
+        const wallMaterial = new THREE.MeshPhongMaterial({ 
+            map: wallTexture,
             color: 0x888888,
+            shininess: 30,
             transparent: false
         });
         
-        // 床の材質を改善 - 暗い茶色の床
+        // Create floor texture
+        const floorCanvas = document.createElement('canvas');
+        floorCanvas.width = 64;
+        floorCanvas.height = 64;
+        const floorCtx = floorCanvas.getContext('2d');
+        
+        floorCtx.fillStyle = '#222233';
+        floorCtx.fillRect(0, 0, 64, 64);
+        
+        // Add floor tile pattern
+        floorCtx.strokeStyle = '#111122';
+        floorCtx.lineWidth = 1;
+        for (let i = 0; i < 64; i += 16) {
+            floorCtx.beginPath();
+            floorCtx.moveTo(0, i);
+            floorCtx.lineTo(64, i);
+            floorCtx.stroke();
+            
+            floorCtx.beginPath();
+            floorCtx.moveTo(i, 0);
+            floorCtx.lineTo(i, 64);
+            floorCtx.stroke();
+        }
+        
+        const floorTexture = new THREE.CanvasTexture(floorCanvas);
+        floorTexture.wrapS = THREE.RepeatWrapping;
+        floorTexture.wrapT = THREE.RepeatWrapping;
+        floorTexture.repeat.set(1, 1);
+        
+        // Enhanced floor material
         const floorGeometry = new THREE.PlaneGeometry(1, 1);
-        const floorMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x333333,
+        const floorMaterial = new THREE.MeshPhongMaterial({ 
+            map: floorTexture,
+            color: 0x333344,
+            shininess: 10,
+            transparent: false
+        });
+        
+        // Create ceiling texture
+        const ceilingCanvas = document.createElement('canvas');
+        ceilingCanvas.width = 64;
+        ceilingCanvas.height = 64;
+        const ceilingCtx = ceilingCanvas.getContext('2d');
+        
+        ceilingCtx.fillStyle = '#111122';
+        ceilingCtx.fillRect(0, 0, 64, 64);
+        
+        // Add rough ceiling texture
+        for (let i = 0; i < 100; i++) {
+            ceilingCtx.fillStyle = Math.random() > 0.5 ? '#151527' : '#0d0d18';
+            ceilingCtx.fillRect(Math.random() * 64, Math.random() * 64, 3, 3);
+        }
+        
+        const ceilingTexture = new THREE.CanvasTexture(ceilingCanvas);
+        ceilingTexture.wrapS = THREE.RepeatWrapping;
+        ceilingTexture.wrapT = THREE.RepeatWrapping;
+        
+        // Add ceiling material for enclosed feeling
+        const ceilingGeometry = new THREE.PlaneGeometry(1, 1);
+        const ceilingMaterial = new THREE.MeshPhongMaterial({ 
+            map: ceilingTexture,
+            color: 0x222233,
+            shininess: 5,
             transparent: false
         });
         
@@ -157,6 +262,13 @@ class GameEngine {
                 floor.position.set(x, 0, y);
                 floor.receiveShadow = true;
                 this.scene.add(floor);
+                
+                // 天井の作成 (add ceiling for enclosed feeling)
+                const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+                ceiling.rotation.x = Math.PI / 2;
+                ceiling.position.set(x, 3, y);
+                ceiling.receiveShadow = true;
+                this.scene.add(ceiling);
                 
                 // 壁の作成
                 if (mazeData[y][x] === 1) {
@@ -177,17 +289,32 @@ class GameEngine {
     }
     
     createGoal(x, z) {
-        // ゴールオブジェクト（回転する赤い円柱）- 材質を改善
+        // Enhanced goal object with glowing effect
         const goalGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
         const goalMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0xff4444,
-            emissive: 0x220000,
+            color: 0xff6666,
+            emissive: 0x441111,
             transparent: false
         });
         
         this.goal = new THREE.Mesh(goalGeometry, goalMaterial);
         this.goal.position.set(x, 1, z);
         this.scene.add(this.goal);
+        
+        // Add a glowing ring around the goal for better visibility
+        const ringGeometry = new THREE.RingGeometry(0.4, 0.6, 16);
+        const ringMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xff3333,
+            emissive: 0x331111,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        const goalRing = new THREE.Mesh(ringGeometry, ringMaterial);
+        goalRing.rotation.x = -Math.PI / 2;
+        goalRing.position.set(x, 0.1, z);
+        this.scene.add(goalRing);
+        this.walls.push(goalRing); // Add to walls array for cleanup
         
         // ゴールライトを配置
         this.goalLight.position.set(x, 3, z);
@@ -212,7 +339,7 @@ class GameEngine {
             this.scene.remove(this.goalLight);
         }
         
-        // 床を削除
+        // 床と天井を削除
         const objectsToRemove = [];
         this.scene.traverse((child) => {
             if (child.geometry && child.geometry.type === 'PlaneGeometry') {
