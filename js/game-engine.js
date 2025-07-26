@@ -272,8 +272,13 @@ class GameEngine {
                 
                 // 壁の作成
                 if (mazeData[y][x] === 1) {
-                    const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-                    wall.position.set(x, 1.5, y);
+                    // Add some variation in wall heights for visual interest
+                    const heightVariation = (Math.sin(x * 0.7) + Math.cos(y * 0.5)) * 0.3;
+                    const wallHeight = 3 + heightVariation;
+                    
+                    const variableWallGeometry = new THREE.BoxGeometry(1, wallHeight, 1);
+                    const wall = new THREE.Mesh(variableWallGeometry, wallMaterial);
+                    wall.position.set(x, wallHeight / 2, y);
                     wall.castShadow = true;
                     wall.receiveShadow = true;
                     this.scene.add(wall);
@@ -291,9 +296,10 @@ class GameEngine {
     createGoal(x, z) {
         // Enhanced goal object with glowing effect
         const goalGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
-        const goalMaterial = new THREE.MeshLambertMaterial({ 
+        const goalMaterial = new THREE.MeshPhongMaterial({ 
             color: 0xff6666,
             emissive: 0x441111,
+            shininess: 100,
             transparent: false
         });
         
@@ -303,11 +309,12 @@ class GameEngine {
         
         // Add a glowing ring around the goal for better visibility
         const ringGeometry = new THREE.RingGeometry(0.4, 0.6, 16);
-        const ringMaterial = new THREE.MeshLambertMaterial({ 
+        const ringMaterial = new THREE.MeshPhongMaterial({ 
             color: 0xff3333,
             emissive: 0x331111,
             transparent: true,
-            opacity: 0.7
+            opacity: 0.8,
+            shininess: 50
         });
         
         const goalRing = new THREE.Mesh(ringGeometry, ringMaterial);
@@ -315,6 +322,27 @@ class GameEngine {
         goalRing.position.set(x, 0.1, z);
         this.scene.add(goalRing);
         this.walls.push(goalRing); // Add to walls array for cleanup
+        
+        // Add floating particles around goal
+        const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const particleMaterial = new THREE.MeshPhongMaterial({
+            color: 0xff4444,
+            emissive: 0x220000,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        for (let i = 0; i < 6; i++) {
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            const angle = (i / 6) * Math.PI * 2;
+            particle.position.set(
+                x + Math.cos(angle) * 0.8,
+                1.5 + Math.sin(i * 0.5) * 0.3,
+                z + Math.sin(angle) * 0.8
+            );
+            this.scene.add(particle);
+            this.walls.push(particle); // Add to walls array for cleanup
+        }
         
         // ゴールライトを配置
         this.goalLight.position.set(x, 3, z);
