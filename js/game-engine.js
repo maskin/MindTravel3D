@@ -11,10 +11,10 @@ class GameEngine {
         this.lights = [];
         
         // プレイヤー設定
-        this.playerPosition = { x: 1, z: 1 };
+        this.playerPosition = { x: 1.5, z: 1.5 }; // Center in cell
         this.playerRotation = 0; // 0=北, π/2=東, π=南, 3π/2=西
-        this.playerHeight = 1.7;
-        this.moveSpeed = 0.1;
+        this.playerHeight = 1.0; // Lower camera height for better view
+        this.moveSpeed = 1.0; // Move one cell at a time
         this.rotationSpeed = Math.PI / 2; // 90度
         
         // ゲーム状態
@@ -67,27 +67,14 @@ class GameEngine {
         
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.setClearColor(0x000000);
+        this.renderer.setClearColor(0x111111); // Slightly lighter background
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.fog = true;
-        
-        // Test canvas immediately
-        console.log('Testing canvas rendering...');
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(50, 50, 100, 100);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '20px Arial';
-            ctx.fillText('CANVAS TEST', 60, 110);
-            console.log('Canvas test completed - green square and text drawn');
-        }
     }
     
     initScene() {
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0x000000, 5, 25);
+        this.scene.fog = new THREE.Fog(0x111111, 10, 40); // Lighter fog, further distance
     }
     
     initCamera() {
@@ -101,29 +88,33 @@ class GameEngine {
     }
     
     initLights() {
-        // 環境光を明るくして全体を照らす
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        // 環境光を強化して全体を明るく
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.0);
         this.scene.add(ambientLight);
         
         // プレイヤーのライト（懐中電灯効果）を強化
-        this.playerLight = new THREE.SpotLight(0xffffff, 1.5, 25, Math.PI / 4, 0.3);
+        this.playerLight = new THREE.SpotLight(0xffffff, 2.0, 30, Math.PI / 3, 0.2);
         this.playerLight.castShadow = true;
         this.playerLight.shadow.mapSize.width = 1024;
         this.playerLight.shadow.mapSize.height = 1024;
         this.playerLight.shadow.camera.near = 0.1;
-        this.playerLight.shadow.camera.far = 25;
+        this.playerLight.shadow.camera.far = 30;
         this.scene.add(this.playerLight);
         
         // 追加の方向光で全体的な明るさを確保
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight.position.set(10, 10, 5);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(25, 25, 25);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.left = -50;
+        directionalLight.shadow.camera.right = 50;
+        directionalLight.shadow.camera.top = 50;
+        directionalLight.shadow.camera.bottom = -50;
         this.scene.add(directionalLight);
         
         // ゴールライト
-        this.goalLight = new THREE.PointLight(0xff0000, 1.0, 20);
+        this.goalLight = new THREE.PointLight(0xff0000, 1.5, 25);
         this.goalLight.position.set(0, 3, 0);
         this.lights.push(this.goalLight);
     }
@@ -134,17 +125,17 @@ class GameEngine {
         // 既存の迷路オブジェクトを削除
         this.clearMaze();
         
-        // 壁の材質を改善 - 石のような質感の灰色の壁
+        // 壁の材質を改善 - より明るい石のような質感
         const wallGeometry = new THREE.BoxGeometry(1, 3, 1);
         const wallMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x888888,
+            color: 0xcccccc,  // Lighter gray for better visibility
             transparent: false
         });
         
-        // 床の材質を改善 - 暗い茶色の床
+        // 床の材質を改善 - 濃い緑色の床で通路を明確に
         const floorGeometry = new THREE.PlaneGeometry(1, 1);
         const floorMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x333333,
+            color: 0x004400,  // Dark green floor
             transparent: false
         });
         
@@ -272,15 +263,26 @@ class GameEngine {
                 break;
         }
         
-        // 衝突判定
-        if (this.canMoveTo(newX, newZ)) {
-            this.playerPosition.x = newX;
-            this.playerPosition.z = newZ;
+        console.log(`Movement attempt: ${direction}, current: (${this.playerPosition.x}, ${this.playerPosition.z}), target: (${newX}, ${newZ}), rotation: ${this.playerRotation}`);
+        
+        // 衝突判定 - 移動先のセルが通路かチェック
+        const targetGridX = Math.floor(newX);
+        const targetGridZ = Math.floor(newZ);
+        
+        console.log(`Target grid: (${targetGridX}, ${targetGridZ})`);
+        
+        if (this.maze && !this.maze.isWall(targetGridX, targetGridZ)) {
+            // セルの中央に移動
+            this.playerPosition.x = targetGridX + 0.5;
+            this.playerPosition.z = targetGridZ + 0.5;
             this.updateCameraPosition();
+            console.log(`Movement successful to: (${this.playerPosition.x}, ${this.playerPosition.z})`);
             
             // ゴール判定
             this.checkGoal();
             return true;
+        } else {
+            console.log(`Movement blocked: target cell (${targetGridX}, ${targetGridZ}) is a wall`);
         }
         
         return false;

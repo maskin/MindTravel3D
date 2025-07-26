@@ -11,7 +11,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
     
     <!-- Three.js Local -->
-    <script src="three.min.js"></script>
+    <script src="three-simple.js"></script>
     
     <style>
         * {
@@ -215,14 +215,22 @@
         <div id="startMenu">
             <h1 class="menu-title">🎮 3D迷路ゲーム</h1>
             <button class="menu-button" onclick="startGame()">ゲームスタート</button>
+            <button class="menu-button" onclick="window.gameManager.generateNewMaze()">新しい迷路</button>
             <button class="menu-button" onclick="showControls()">操作方法</button>
             
             <div class="controls-info">
                 <strong>操作方法:</strong><br>
+                PC:<br>
                 ↑/W: 前進 | ↓/S: 後退<br>
-                ←/A: 左回転 | →/D: 右回転<br>
-                マウス: 視点操作 | R: 新迷路<br>
-                Esc: メニュー
+                ←/A: 左に90度回転 | →/D: 右に90度回転<br>
+                マウス: 視点操作（クリックでポインターロック）<br>
+                R: 新しい迷路生成 | Esc: メニュー<br><br>
+                モバイル:<br>
+                画面下部のボタンで移動・回転<br>
+                画面をスワイプして移動・回転<br><br>
+                目標:<br>
+                スタート地点から回転する<span style="color: #ff4444;">赤いゴール</span>を目指そう！<br>
+                迷路は50×50の大きさで自動生成されます。
             </div>
         </div>
         
