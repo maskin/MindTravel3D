@@ -86,8 +86,8 @@ class UIManager {
     }
     
     showControls() {
-        this.showModal(
-            '操作方法',
+        const title = window.languageManager ? window.languageManager.getText('controlsTitle') : '操作方法';
+        const message = window.languageManager ? window.languageManager.getText('controlsText') : 
             'PC操作:\n' +
             '↑/W: 前進\n' +
             '↓/S: 後退\n' +
@@ -98,16 +98,20 @@ class UIManager {
             'Esc: メニュー\n\n' +
             'モバイル操作:\n' +
             '画面下部のボタンまたは\n' +
-            'タッチスワイプで操作'
-        );
+            'タッチスワイプで操作';
+        
+        this.showModal(title, message);
     }
     
     showError(message) {
-        this.showModal('エラー', message);
+        const title = window.languageManager ? window.languageManager.getText('error') : 'エラー';
+        this.showModal(title, message);
     }
     
     showLoading(message) {
-        this.showModal('読み込み中', message || '処理中です...');
+        const title = window.languageManager ? window.languageManager.getText('loading') : '読み込み中';
+        const defaultMessage = window.languageManager ? window.languageManager.getText('processing') : '処理中です...';
+        this.showModal(title, message || defaultMessage);
     }
 }
 

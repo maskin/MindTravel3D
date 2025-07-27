@@ -15,6 +15,10 @@ class GameManager {
             // エラーハンドリング設定
             this.setupErrorHandling();
             
+            // 言語管理システム初期化
+            this.languageManager = new LanguageManager();
+            window.languageManager = this.languageManager;
+            
             // UIマネージャー初期化
             this.uiManager = new UIManager();
             window.uiManager = this.uiManager;
@@ -38,6 +42,10 @@ class GameManager {
             
             // アニメーション開始
             this.gameEngine.animate();
+            
+            // 初期言語設定を適用
+            this.languageManager.updateAllText();
+            this.updateLanguageButtons();
             
             this.isInitialized = true;
             console.log('ゲーム管理システム初期化完了');
@@ -174,6 +182,17 @@ class GameManager {
             console.log('PWA インストール完了');
         });
     }
+    
+    updateLanguageButtons() {
+        const languageBtns = document.querySelectorAll('.language-btn');
+        languageBtns.forEach(btn => {
+            btn.classList.remove('active');
+            if ((btn.onclick.toString().includes("'ja')") && this.languageManager.getCurrentLanguage() === 'ja') ||
+                (btn.onclick.toString().includes("'en')") && this.languageManager.getCurrentLanguage() === 'en')) {
+                btn.classList.add('active');
+            }
+        });
+    }
 }
 
 // ゲーム初期化
@@ -206,3 +225,13 @@ window.debugInfo = () => {
         });
     }
 };
+
+// 言語切り替えグローバル関数
+function switchLanguage(lang) {
+    if (window.languageManager) {
+        window.languageManager.setLanguage(lang);
+        if (window.gameManager) {
+            window.gameManager.updateLanguageButtons();
+        }
+    }
+}

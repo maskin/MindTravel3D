@@ -340,16 +340,21 @@ class GameEngine {
         
         if (distance < 0.8) {
             this.gameWon = true;
-            window.uiManager.showModal('ゴール到達！', 'おめでとうございます！\n迷路をクリアしました！\n\nRキーで新しい迷路に挑戦できます。');
+            const title = window.languageManager ? window.languageManager.getText('goalReached') : 'ゴール到達！';
+            const message = window.languageManager ? window.languageManager.getText('congratulations') : 'おめでとうございます！\n迷路をクリアしました！\n\nRキーで新しい迷路に挑戦できます。';
+            window.uiManager.showModal(title, message);
         }
     }
     
     getDirectionName() {
         const angle = this.playerRotation;
-        if (angle < Math.PI / 4 || angle > 7 * Math.PI / 4) return '北';
-        if (angle < 3 * Math.PI / 4) return '東';
-        if (angle < 5 * Math.PI / 4) return '南';
-        return '西';
+        let directionKey;
+        if (angle < Math.PI / 4 || angle > 7 * Math.PI / 4) directionKey = 'north';
+        else if (angle < 3 * Math.PI / 4) directionKey = 'east';
+        else if (angle < 5 * Math.PI / 4) directionKey = 'south';
+        else directionKey = 'west';
+        
+        return window.languageManager ? window.languageManager.getText(directionKey) : '北';
     }
     
     animate() {

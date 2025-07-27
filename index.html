@@ -106,6 +106,35 @@
             line-height: 1.6;
         }
         
+        .language-selector {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .language-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            font-size: 14px;
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+        
+        .language-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .language-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-color: #667eea;
+        }
+        
         #mobileControls {
             position: absolute;
             bottom: 20px;
@@ -213,10 +242,15 @@
         </div>
         
         <div id="startMenu">
-            <h1 class="menu-title">🎮 3D迷路ゲーム</h1>
-            <button class="menu-button" onclick="startGame()">ゲームスタート</button>
-            <button class="menu-button" onclick="window.gameManager.generateNewMaze()">新しい迷路</button>
-            <button class="menu-button" onclick="showControls()">操作方法</button>
+            <h1 class="menu-title" id="menuTitle">🎮 3D迷路ゲーム</h1>
+            <button class="menu-button" id="startButton" onclick="startGame()">ゲームスタート</button>
+            <button class="menu-button" id="newMazeButton" onclick="window.gameManager.generateNewMaze()">新しい迷路</button>
+            <button class="menu-button" id="controlsButton" onclick="showControls()">操作方法</button>
+            
+            <div class="language-selector">
+                <button class="language-btn" onclick="switchLanguage('ja')">🇯🇵 日本語</button>
+                <button class="language-btn" onclick="switchLanguage('en')">🇺🇸 English</button>
+            </div>
             
             <div class="controls-info">
                 <strong>操作方法:</strong><br>
@@ -247,12 +281,13 @@
             <div class="modal-content">
                 <h2 class="modal-title" id="modalTitle">通知</h2>
                 <p class="modal-text" id="modalText">メッセージ</p>
-                <button class="menu-button" onclick="closeModal()">OK</button>
+                <button class="menu-button" id="modalOkButton" onclick="closeModal()">OK</button>
             </div>
         </div>
     </div>
 
     <!-- Game Scripts -->
+    <script src="js/language-manager.js"></script>
     <script src="js/maze-generator.js"></script>
     <script src="js/game-engine.js"></script>
     <script src="js/controls.js"></script>
