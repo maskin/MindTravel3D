@@ -142,115 +142,22 @@ class GameEngine {
         // 既存の迷路オブジェクトを削除
         this.clearMaze();
         
-        // Create procedural textures for more realistic appearance
-        const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 128;
-        const ctx = canvas.getContext('2d');
-        
-        // Create stone-like wall texture
-        ctx.fillStyle = '#666666';
-        ctx.fillRect(0, 0, 128, 128);
-        
-        // Add stone block pattern
-        ctx.strokeStyle = '#444444';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 128; i += 32) {
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(128, i);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, 128);
-            ctx.stroke();
-        }
-        
-        // Add random noise for texture
-        for (let i = 0; i < 200; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? '#777777' : '#555555';
-            ctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
-        }
-        
-        const wallTexture = new THREE.CanvasTexture(canvas);
-        wallTexture.wrapS = THREE.RepeatWrapping;
-        wallTexture.wrapT = THREE.RepeatWrapping;
-        wallTexture.repeat.set(1, 1);
-        
-        // Enhanced wall material with texture and better lighting response
+        // Create materials with solid colors (no textures due to minimal Three.js implementation)
         const wallGeometry = new THREE.BoxGeometry(1, 3, 1);
-        const wallMaterial = new THREE.MeshPhongMaterial({ 
-            map: wallTexture,
-            color: 0x888888,
-            shininess: 30,
-            transparent: false
+        const wallMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x666666
         });
         
-        // Create floor texture
-        const floorCanvas = document.createElement('canvas');
-        floorCanvas.width = 64;
-        floorCanvas.height = 64;
-        const floorCtx = floorCanvas.getContext('2d');
-        
-        floorCtx.fillStyle = '#222233';
-        floorCtx.fillRect(0, 0, 64, 64);
-        
-        // Add floor tile pattern
-        floorCtx.strokeStyle = '#111122';
-        floorCtx.lineWidth = 1;
-        for (let i = 0; i < 64; i += 16) {
-            floorCtx.beginPath();
-            floorCtx.moveTo(0, i);
-            floorCtx.lineTo(64, i);
-            floorCtx.stroke();
-            
-            floorCtx.beginPath();
-            floorCtx.moveTo(i, 0);
-            floorCtx.lineTo(i, 64);
-            floorCtx.stroke();
-        }
-        
-        const floorTexture = new THREE.CanvasTexture(floorCanvas);
-        floorTexture.wrapS = THREE.RepeatWrapping;
-        floorTexture.wrapT = THREE.RepeatWrapping;
-        floorTexture.repeat.set(1, 1);
-        
-        // Enhanced floor material
+        // Floor material with dark color
         const floorGeometry = new THREE.PlaneGeometry(1, 1);
-        const floorMaterial = new THREE.MeshPhongMaterial({ 
-            map: floorTexture,
-            color: 0x333344,
-            shininess: 10,
-            transparent: false
+        const floorMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x222233
         });
         
-        // Create ceiling texture
-        const ceilingCanvas = document.createElement('canvas');
-        ceilingCanvas.width = 64;
-        ceilingCanvas.height = 64;
-        const ceilingCtx = ceilingCanvas.getContext('2d');
-        
-        ceilingCtx.fillStyle = '#111122';
-        ceilingCtx.fillRect(0, 0, 64, 64);
-        
-        // Add rough ceiling texture
-        for (let i = 0; i < 100; i++) {
-            ceilingCtx.fillStyle = Math.random() > 0.5 ? '#151527' : '#0d0d18';
-            ceilingCtx.fillRect(Math.random() * 64, Math.random() * 64, 3, 3);
-        }
-        
-        const ceilingTexture = new THREE.CanvasTexture(ceilingCanvas);
-        ceilingTexture.wrapS = THREE.RepeatWrapping;
-        ceilingTexture.wrapT = THREE.RepeatWrapping;
-        
-        // Add ceiling material for enclosed feeling
+        // Ceiling material 
         const ceilingGeometry = new THREE.PlaneGeometry(1, 1);
-        const ceilingMaterial = new THREE.MeshPhongMaterial({ 
-            map: ceilingTexture,
-            color: 0x222233,
-            shininess: 5,
-            transparent: false
+        const ceilingMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x111122
         });
         
         // 迷路の作成
@@ -294,27 +201,20 @@ class GameEngine {
     }
     
     createGoal(x, z) {
-        // Enhanced goal object with glowing effect
+        // Goal object with solid colors (compatible with minimal Three.js)
         const goalGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
-        const goalMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xff6666,
-            emissive: 0x441111,
-            shininess: 100,
-            transparent: false
+        const goalMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xff6666
         });
         
         this.goal = new THREE.Mesh(goalGeometry, goalMaterial);
         this.goal.position.set(x, 1, z);
         this.scene.add(this.goal);
         
-        // Add a glowing ring around the goal for better visibility
+        // Add a ring around the goal for better visibility
         const ringGeometry = new THREE.RingGeometry(0.4, 0.6, 16);
-        const ringMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xff3333,
-            emissive: 0x331111,
-            transparent: true,
-            opacity: 0.8,
-            shininess: 50
+        const ringMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xff3333
         });
         
         const goalRing = new THREE.Mesh(ringGeometry, ringMaterial);
@@ -325,11 +225,8 @@ class GameEngine {
         
         // Add floating particles around goal
         const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-        const particleMaterial = new THREE.MeshPhongMaterial({
-            color: 0xff4444,
-            emissive: 0x220000,
-            transparent: true,
-            opacity: 0.7
+        const particleMaterial = new THREE.MeshLambertMaterial({
+            color: 0xff4444
         });
         
         for (let i = 0; i < 6; i++) {
