@@ -32,20 +32,73 @@ class GameEngine {
         console.log('3Dエンジン初期化開始...');
         
         try {
+            // System information logging
+            console.log('Browser:', navigator.userAgent);
+            console.log('Platform:', navigator.platform);
+            console.log('Screen resolution:', screen.width + 'x' + screen.height);
+            console.log('Device pixel ratio:', window.devicePixelRatio);
+            
             // Three.jsの確認
             if (typeof THREE === 'undefined') {
-                throw new Error('Three.js が読み込まれていません');
+                throw new Error('Three.js が読み込まれていません。three.min.jsファイルが正しく読み込まれているか確認してください。');
+            }
+            console.log('Three.js loaded successfully. Version:', THREE.REVISION);
+            
+            // Step-by-step initialization with detailed logging
+            console.log('Step 1: Initializing renderer...');
+            this.initRenderer();
+            console.log('✓ Renderer initialized');
+            
+            console.log('Step 2: Initializing scene...');
+            this.initScene();
+            console.log('✓ Scene initialized');
+            
+            console.log('Step 3: Initializing camera...');
+            this.initCamera();
+            console.log('✓ Camera initialized');
+            
+            console.log('Step 4: Initializing lights...');
+            this.initLights();
+            console.log('✓ Lights initialized');
+            
+            // Test render to verify everything works
+            console.log('Step 5: Testing initial render...');
+            if (this.renderer && this.scene && this.camera) {
+                this.renderer.render(this.scene, this.camera);
+                console.log('✓ Initial render test successful');
+            } else {
+                throw new Error('コンポーネントの初期化が不完全です');
             }
             
-            this.initRenderer();
-            this.initScene();
-            this.initCamera();
-            this.initLights();
-            
-            console.log('3Dエンジン初期化完了');
+            console.log('🎉 3Dエンジン初期化完了');
             return true;
         } catch (error) {
-            console.error('3Dエンジン初期化エラー:', error);
+            console.error('❌ 3Dエンジン初期化エラー:', error);
+            console.error('Error stack:', error.stack);
+            
+            // Show user-friendly error message
+            if (window.uiManager) {
+                let errorMessage = '3Dエンジンの初期化に失敗しました:\n\n';
+                
+                if (error.message.includes('Three.js')) {
+                    errorMessage += '• Three.jsライブラリが読み込まれていません\n';
+                    errorMessage += '• インターネット接続を確認してください\n';
+                    errorMessage += '• ページを再読み込みしてください';
+                } else if (error.message.includes('WebGL')) {
+                    errorMessage += '• ブラウザがWebGLをサポートしていません\n';
+                    errorMessage += '• Chrome、Firefox、Edgeの最新版をお試しください\n';
+                    errorMessage += '• ブラウザの設定でWebGLが有効になっているか確認してください';
+                } else if (error.message.includes('Canvas')) {
+                    errorMessage += '• Canvasエレメントが見つかりません\n';
+                    errorMessage += '• ページを再読み込みしてください';
+                } else {
+                    errorMessage += `• ${error.message}\n`;
+                    errorMessage += '• ブラウザコンソールで詳細を確認してください';
+                }
+                
+                window.uiManager.showError(errorMessage);
+            }
+            
             return false;
         }
     }
@@ -59,29 +112,36 @@ class GameEngine {
         console.log('Canvas found:', canvas);
         console.log('Canvas computed style:', window.getComputedStyle(canvas));
         
-        this.renderer = new THREE.WebGLRenderer({ 
-            canvas: canvas,
-            antialias: true,
-            alpha: false
-        });
+        // Check WebGL support before creating renderer
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+            throw new Error('WebGLがサポートされていません。WebGL対応ブラウザを使用してください。');
+        }
+        console.log('WebGL support confirmed:', gl.getParameter(gl.VERSION));
+        console.log('WebGL vendor:', gl.getParameter(gl.VENDOR));
+        console.log('WebGL renderer:', gl.getParameter(gl.RENDERER));
         
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.setClearColor(0x000000);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.fog = true;
-        
-        // Test canvas immediately
-        console.log('Testing canvas rendering...');
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(50, 50, 100, 100);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '20px Arial';
-            ctx.fillText('CANVAS TEST', 60, 110);
-            console.log('Canvas test completed - green square and text drawn');
+        try {
+            this.renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
+                antialias: true,
+                alpha: false,
+                preserveDrawingBuffer: false,
+                powerPreference: "default"
+            });
+            
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            this.renderer.setClearColor(0x000000);
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            console.log('WebGL renderer created successfully');
+            console.log('Renderer info:', this.renderer.info);
+            
+        } catch (rendererError) {
+            console.error('WebGLRenderer creation failed:', rendererError);
+            throw new Error(`WebGLレンダラーの作成に失敗しました: ${rendererError.message}`);
         }
     }
     

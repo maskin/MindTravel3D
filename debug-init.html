@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameEngine Debug Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+        }
+        .test { margin: 10px 0; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .warn { color: #ff0; }
+        pre { background: #111; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 GameEngine Initialization Debug Test</h1>
+    <div id="results"></div>
+    
+    <canvas id="gameCanvas" style="border: 1px solid #333; width: 300px; height: 200px;"></canvas>
+    
+    <script src="three.min.js"></script>
+    <script>
+        const results = document.getElementById('results');
+        
+        function logTest(name, passed, details = '') {
+            const div = document.createElement('div');
+            div.className = 'test';
+            div.innerHTML = `
+                <span class="${passed ? 'pass' : 'fail'}">
+                    ${passed ? '✅' : '❌'} ${name}
+                </span>
+                ${details ? `<pre>${details}</pre>` : ''}
+            `;
+            results.appendChild(div);
+            return passed;
+        }
+        
+        function runDiagnostics() {
+            console.log('=== GameEngine Diagnostic Test ===');
+            
+            // Test 1: Three.js availability
+            const threeLoaded = typeof THREE !== 'undefined';
+            logTest('Three.js loaded', threeLoaded, 
+                threeLoaded ? `THREE.REVISION: ${THREE.REVISION}` : 'THREE is undefined - check three.min.js loading');
+            
+            // Test 2: Canvas element
+            const canvas = document.getElementById('gameCanvas');
+            const canvasExists = canvas !== null;
+            logTest('Canvas element exists', canvasExists, 
+                canvasExists ? `Canvas size: ${canvas.width}x${canvas.height}` : 'Canvas with id="gameCanvas" not found');
+            
+            if (!threeLoaded || !canvasExists) {
+                logTest('Critical Error', false, 'Cannot proceed with WebGL tests');
+                return;
+            }
+            
+            // Test 3: WebGL support
+            let webglSupported = false;
+            let webglError = '';
+            try {
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                webglSupported = gl !== null;
+                if (gl) {
+                    webglError = `Vendor: ${gl.getParameter(gl.VENDOR)}, Renderer: ${gl.getParameter(gl.RENDERER)}`;
+                } else {
+                    webglError = 'WebGL context is null';
+                }
+            } catch (e) {
+                webglError = `WebGL error: ${e.message}`;
+            }
+            logTest('WebGL support', webglSupported, webglError);
+            
+            // Test 4: Three.js WebGL renderer
+            let rendererCreated = false;
+            let rendererError = '';
+            try {
+                const renderer = new THREE.WebGLRenderer({ 
+                    canvas: canvas,
+                    antialias: true,
+                    alpha: false
+                });
+                rendererCreated = true;
+                rendererError = `Renderer created successfully`;
+                renderer.dispose(); // Clean up
+            } catch (e) {
+                rendererError = `Renderer creation failed: ${e.message}`;
+            }
+            logTest('Three.js WebGL Renderer', rendererCreated, rendererError);
+            
+            // Test 5: Scene creation
+            let sceneCreated = false;
+            let sceneError = '';
+            try {
+                const scene = new THREE.Scene();
+                sceneCreated = true;
+                sceneError = 'Scene created successfully';
+            } catch (e) {
+                sceneError = `Scene creation failed: ${e.message}`;
+            }
+            logTest('Three.js Scene', sceneCreated, sceneError);
+            
+            // Test 6: Camera creation
+            let cameraCreated = false;
+            let cameraError = '';
+            try {
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                cameraCreated = true;
+                cameraError = 'Camera created successfully';
+            } catch (e) {
+                cameraError = `Camera creation failed: ${e.message}`;
+            }
+            logTest('Three.js Camera', cameraCreated, cameraError);
+            
+            // Summary
+            const allPassed = threeLoaded && canvasExists && webglSupported && rendererCreated && sceneCreated && cameraCreated;
+            logTest('Overall Status', allPassed, 
+                allPassed ? 'All tests passed - GameEngine should initialize correctly' : 'One or more tests failed - check individual failures above');
+                
+            // Browser info
+            const browserInfo = `
+Browser: ${navigator.userAgent}
+WebGL Extensions: ${webglSupported ? 'Available' : 'Not available'}
+Canvas Support: ${canvas ? 'Yes' : 'No'}
+            `;
+            logTest('Browser Information', true, browserInfo);
+        }
+        
+        // Run diagnostics when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runDiagnostics, 100);
+        });
+        
+        // Also run immediately in case load event already fired
+        if (document.readyState === 'complete') {
+            setTimeout(runDiagnostics, 100);
+        }
+    </script>
+</body>
+</html>
