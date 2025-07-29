@@ -50,8 +50,22 @@ class GameEngine {
                 Scene: typeof THREE.Scene,
                 PerspectiveCamera: typeof THREE.PerspectiveCamera,
                 WebGLRenderer: typeof THREE.WebGLRenderer,
-                Vector3: typeof THREE.Vector3
+                Vector3: typeof THREE.Vector3,
+                Texture: typeof THREE.Texture,
+                CanvasTexture: typeof THREE.CanvasTexture
             });
+            
+            // Test CanvasTexture constructor
+            try {
+                console.log('Testing CanvasTexture constructor...');
+                const testCanvas = document.createElement('canvas');
+                testCanvas.width = 32;
+                testCanvas.height = 32;
+                const testTexture = new THREE.CanvasTexture(testCanvas);
+                console.log('CanvasTexture test successful:', testTexture);
+            } catch (textureError) {
+                console.error('CanvasTexture test failed:', textureError);
+            }
             
             this.initRenderer();
             this.initScene();
