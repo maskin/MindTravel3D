@@ -307,32 +307,18 @@ class GameEngine {
                 canvas: wallTexture.canvas
             });
         } catch (canvasTextureError) {
-            console.error('❌ CanvasTexture creation FAILED');
+            console.error('❌ Standard CanvasTexture creation FAILED');
             console.error('Error name:', canvasTextureError.name);
             console.error('Error message:', canvasTextureError.message);
             console.error('Error stack:', canvasTextureError.stack);
-            console.error('Full error object:', canvasTextureError);
-            console.error('Complete diagnostic info:', {
-                errorType: typeof canvasTextureError,
-                errorConstructor: canvasTextureError.constructor.name,
-                canvas: canvas,
-                canvasValid: canvas instanceof HTMLCanvasElement,
-                threeAvailable: !!window.THREE,
-                canvasTextureAvailable: !!window.THREE.CanvasTexture,
-                canvasTextureType: typeof window.THREE.CanvasTexture,
-                windowKeys: Object.keys(window).filter(k => k.includes('THREE')),
-                documentReadyState: document.readyState
-            });
             
-            // Try alternative approaches
-            console.log('--- Attempting alternative CanvasTexture creation ---');
+            // Try emergency fallback
+            console.log('🔧 Attempting emergency fallback...');
             try {
-                const altTexture = Object.create(window.THREE.CanvasTexture.prototype);
-                window.THREE.CanvasTexture.call(altTexture, canvas);
-                console.log('Alternative method SUCCESS:', altTexture);
-                wallTexture = altTexture;
-            } catch (altError) {
-                console.error('Alternative method also failed:', altError);
+                wallTexture = window.createCanvasTexture(canvas);
+                console.log('✅ Emergency CanvasTexture created successfully:', wallTexture);
+            } catch (emergencyError) {
+                console.error('❌ Emergency fallback also failed:', emergencyError);
                 throw canvasTextureError; // Throw original error
             }
         }
@@ -382,7 +368,14 @@ class GameEngine {
             console.log('✅ Floor CanvasTexture created successfully');
         } catch (floorTextureError) {
             console.error('❌ Floor CanvasTexture creation FAILED:', floorTextureError);
-            throw floorTextureError;
+            console.log('🔧 Attempting emergency fallback for floor texture...');
+            try {
+                floorTexture = window.createCanvasTexture(floorCanvas);
+                console.log('✅ Emergency floor CanvasTexture created successfully');
+            } catch (emergencyError) {
+                console.error('❌ Emergency floor fallback also failed:', emergencyError);
+                throw floorTextureError;
+            }
         }
         floorTexture.wrapS = THREE.RepeatWrapping;
         floorTexture.wrapT = THREE.RepeatWrapping;
@@ -419,7 +412,14 @@ class GameEngine {
             console.log('✅ Ceiling CanvasTexture created successfully');
         } catch (ceilingTextureError) {
             console.error('❌ Ceiling CanvasTexture creation FAILED:', ceilingTextureError);
-            throw ceilingTextureError;
+            console.log('🔧 Attempting emergency fallback for ceiling texture...');
+            try {
+                ceilingTexture = window.createCanvasTexture(ceilingCanvas);
+                console.log('✅ Emergency ceiling CanvasTexture created successfully');
+            } catch (emergencyError) {
+                console.error('❌ Emergency ceiling fallback also failed:', emergencyError);
+                throw ceilingTextureError;
+            }
         }
         ceilingTexture.wrapS = THREE.RepeatWrapping;
         ceilingTexture.wrapT = THREE.RepeatWrapping;
