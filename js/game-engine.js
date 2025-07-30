@@ -233,7 +233,31 @@ class GameEngine {
             ctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
         }
         
-        const wallTexture = new THREE.CanvasTexture(canvas);
+        // Debug CanvasTexture creation
+        console.log('About to create CanvasTexture. Debugging info:');
+        console.log('  Canvas:', canvas);
+        console.log('  THREE object:', !!window.THREE);
+        console.log('  THREE.CanvasTexture type:', typeof THREE.CanvasTexture);
+        console.log('  THREE.CanvasTexture function:', THREE.CanvasTexture);
+        
+        let wallTexture;
+        try {
+            wallTexture = new THREE.CanvasTexture(canvas);
+            console.log('CanvasTexture created successfully:', wallTexture);
+        } catch (canvasTextureError) {
+            console.error('CanvasTexture creation failed:', canvasTextureError);
+            console.error('Error details:', {
+                message: canvasTextureError.message,
+                stack: canvasTextureError.stack,
+                canvas: canvas,
+                canvasValid: canvas instanceof HTMLCanvasElement,
+                threeAvailable: !!window.THREE,
+                canvasTextureAvailable: !!window.THREE.CanvasTexture,
+                canvasTextureType: typeof window.THREE.CanvasTexture
+            });
+            throw canvasTextureError;
+        }
+        
         wallTexture.wrapS = THREE.RepeatWrapping;
         wallTexture.wrapT = THREE.RepeatWrapping;
         wallTexture.repeat.set(1, 1);
