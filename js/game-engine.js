@@ -280,6 +280,21 @@ class GameEngine {
         }
         
         console.log('--- Attempting actual CanvasTexture creation ---');
+        
+        // Extra verification that CanvasTexture exists and is a constructor
+        if (!window.THREE || !window.THREE.CanvasTexture) {
+            console.error('❌ THREE.CanvasTexture not found in window.THREE');
+            throw new Error('THREE.CanvasTexture is not available');
+        }
+        
+        if (typeof window.THREE.CanvasTexture !== 'function') {
+            console.error('❌ THREE.CanvasTexture is not a function:', typeof window.THREE.CanvasTexture);
+            throw new Error('THREE.CanvasTexture is not a constructor');
+        }
+        
+        console.log('✓ CanvasTexture is available and is a function');
+        console.log('  CanvasTexture source preview:', window.THREE.CanvasTexture.toString().substring(0, 200));
+        
         let wallTexture;
         try {
             console.log('Calling new THREE.CanvasTexture(canvas)...');
