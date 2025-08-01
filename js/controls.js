@@ -105,19 +105,14 @@ class Controls {
         
         const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
         
-        // マウス移動で視点回転
-        if (Math.abs(movementX) > 0) {
-            this.gameEngine.playerRotation += movementX * this.mouseSpeed;
-            
-            // 角度を正規化
-            while (this.gameEngine.playerRotation < 0) {
-                this.gameEngine.playerRotation += Math.PI * 2;
+        // Disable continuous mouse rotation for discrete maze experience
+        // Mouse movement now performs discrete 90-degree turns based on movement threshold
+        if (Math.abs(movementX) > 15) { // Threshold to prevent accidental turns
+            if (movementX > 0) {
+                this.gameEngine.rotatePlayer('right');
+            } else {
+                this.gameEngine.rotatePlayer('left');
             }
-            while (this.gameEngine.playerRotation >= Math.PI * 2) {
-                this.gameEngine.playerRotation -= Math.PI * 2;
-            }
-            
-            this.gameEngine.updateCameraPosition();
         }
     }
     

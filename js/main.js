@@ -122,9 +122,10 @@ class GameManager {
             // 3D迷路作成
             await this.gameEngine.createMaze(mazeData);
             
-            // プレイヤー位置設定 (center player in maze cell)
+            // プレイヤー位置設定 - ensure discrete grid position (cell center)
             const startPos = this.mazeGenerator.getStartPosition();
             this.gameEngine.setPlayerPosition(startPos.x + 0.5, startPos.y + 0.5);
+            // Set initial rotation to discrete value (0 = North)
             this.gameEngine.setPlayerRotation(0);
             
             // ゲーム状態設定
@@ -161,9 +162,10 @@ class GameManager {
             // 3D迷路再作成
             await this.gameEngine.createMaze(mazeData);
             
-            // プレイヤーをスタート位置にリセット (center player in maze cell)
+            // プレイヤーをスタート位置にリセット - ensure discrete grid position (cell center)
             const startPos = this.mazeGenerator.getStartPosition();
             this.gameEngine.setPlayerPosition(startPos.x + 0.5, startPos.y + 0.5);
+            // Reset to discrete North direction
             this.gameEngine.setPlayerRotation(0);
             this.gameEngine.gameWon = false;
             
