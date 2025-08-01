@@ -10,9 +10,9 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
     
-    <!-- Three.js with Fallback CDNs -->
+    <!-- Three.js with Fallback CDNs and Sequential Loading -->
     <script>
-        // Three.js CDN loading with fallback mechanism
+        // Three.js CDN loading with fallback mechanism and sequential script loading
         (function() {
             const cdnSources = [
                 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.min.js',
@@ -20,11 +20,76 @@
                 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r170/three.min.js'
             ];
             
+            const dependentScripts = [
+                'js/three-compatibility.js',
+                'js/maze-generator.js?v=2025-08-01-upgraded',
+                'js/game-engine.js?v=2025-08-01-upgraded',
+                'js/controls.js?v=2025-08-01-upgraded',
+                'js/ui-manager.js?v=2025-08-01-upgraded',
+                'js/main.js?v=2025-08-01-upgraded'
+            ];
+            
             let currentCdnIndex = 0;
+            
+            function loadScript(src) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            
+            async function loadDependentScripts() {
+                console.log('Loading dependent scripts sequentially...');
+                for (const scriptSrc of dependentScripts) {
+                    try {
+                        await loadScript(scriptSrc);
+                        console.log(`✅ Loaded: ${scriptSrc}`);
+                    } catch (error) {
+                        console.error(`❌ Failed to load: ${scriptSrc}`, error);
+                    }
+                }
+                
+                // Script loading verification
+                console.log('Script loading verification:', {
+                    THREE: typeof THREE,
+                    ThreeCompat: typeof ThreeCompat,
+                    MazeGenerator: typeof MazeGenerator,
+                    GameEngine: typeof GameEngine,
+                    Controls: typeof Controls,
+                    UIManager: typeof UIManager,
+                    GameManager: typeof GameManager
+                });
+                
+                // Log Three.js version info
+                if (typeof THREE !== 'undefined' && THREE.REVISION) {
+                    console.log('Three.js version:', 'r' + THREE.REVISION);
+                }
+                
+                // Initialize game when all scripts are loaded
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initializeGame);
+                } else {
+                    initializeGame();
+                }
+            }
+            
+            async function initializeGame() {
+                console.log('DOM読み込み完了 - ゲーム初期化開始...');
+                
+                // グローバルゲームマネージャー作成
+                window.gameManager = new GameManager();
+                
+                // 初期化実行
+                await window.gameManager.init();
+            }
             
             function loadThreeJS() {
                 if (currentCdnIndex >= cdnSources.length) {
                     console.error('All Three.js CDN sources failed to load');
+                    alert('Three.jsの読み込みに失敗しました。ネットワーク接続を確認してページを再読み込みしてください。');
                     return;
                 }
                 
@@ -35,6 +100,12 @@
                     console.log(`Three.js loaded successfully from: ${cdnSources[currentCdnIndex]}`);
                     if (typeof THREE !== 'undefined') {
                         console.log('THREE object available, version:', THREE.REVISION ? 'r' + THREE.REVISION : 'unknown');
+                        // Once Three.js is loaded, load all dependent scripts
+                        loadDependentScripts();
+                    } else {
+                        console.warn('THREE object not available after load');
+                        currentCdnIndex++;
+                        setTimeout(loadThreeJS, 100);
                     }
                 };
                 
@@ -50,9 +121,6 @@
             loadThreeJS();
         })();
     </script>
-    
-    <!-- Three.js Compatibility Layer -->
-    <script src="js/three-compatibility.js"></script>
     
     <style>
         * {
@@ -285,29 +353,6 @@
         </div>
     </div>
 
-    <!-- Game Scripts -->
-    <script src="js/maze-generator.js?v=2025-08-01-upgraded"></script>
-    <script src="js/game-engine.js?v=2025-08-01-upgraded"></script>
-    <script src="js/controls.js?v=2025-08-01-upgraded"></script>
-    <script src="js/ui-manager.js?v=2025-08-01-upgraded"></script>
-    <script src="js/main.js?v=2025-08-01-upgraded"></script>
-    
-    <!-- Script loading verification -->
-    <script>
-        console.log('Script loading verification:', {
-            THREE: typeof THREE,
-            ThreeCompat: typeof ThreeCompat,
-            MazeGenerator: typeof MazeGenerator,
-            GameEngine: typeof GameEngine,
-            Controls: typeof Controls,
-            UIManager: typeof UIManager,
-            GameManager: typeof GameManager
-        });
-        
-        // Log Three.js version info
-        if (typeof THREE !== 'undefined' && THREE.REVISION) {
-            console.log('Three.js version:', 'r' + THREE.REVISION);
-        }
-    </script>
+    <!-- Game Scripts will be loaded dynamically after Three.js is ready -->
 </body>
 </html>

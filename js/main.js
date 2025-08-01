@@ -207,16 +207,7 @@ class GameManager {
     }
 }
 
-// ゲーム初期化
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM読み込み完了 - ゲーム初期化開始...');
-    
-    // グローバルゲームマネージャー作成
-    window.gameManager = new GameManager();
-    
-    // 初期化実行
-    await window.gameManager.init();
-});
+// ゲーム初期化は index.html の動的スクリプトローダーで行われます
 
 // ウィンドウリサイズ処理
 window.addEventListener('resize', () => {
