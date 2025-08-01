@@ -717,7 +717,7 @@ class GameEngine {
         // UI更新
         if (window.uiManager) {
             window.uiManager.updateGameInfo({
-                position: `${this.playerPosition.x.toFixed(1)}, ${this.playerPosition.z.toFixed(1)}`,
+                position: `${Math.round(this.playerPosition.x)}, ${Math.round(this.playerPosition.z)}`,
                 direction: this.getDirectionName(),
                 fps: this.fps
             });
@@ -732,6 +732,22 @@ class GameEngine {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
     
+    // 現在の回転角度に基づいて移動方向を取得
+    getGridDirection() {
+        const angle = this.playerRotation;
+        // 角度を正規化して4方向にスナップ
+        const normalizedAngle = ((angle + Math.PI / 4) % (Math.PI * 2)) / (Math.PI / 2);
+        const direction = Math.floor(normalizedAngle);
+        
+        switch (direction) {
+            case 0: return { x: 0, z: 1 };  // 北
+            case 1: return { x: 1, z: 0 };  // 東
+            case 2: return { x: 0, z: -1 }; // 南
+            case 3: return { x: -1, z: 0 }; // 西
+            default: return { x: 0, z: 1 }; // デフォルトは北
+        }
+    }
+
     newGame() {
         this.gameWon = false;
         // Don't reset position here - it should be set by caller with proper centering
