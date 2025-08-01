@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Upgrade Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 20px auto;
+        }
+        .status {
+            text-align: center;
+            margin: 20px;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+        .success { background: #2a5a2a; }
+        .error { background: #5a2a2a; }
+        .info { background: #2a3a5a; }
+    </style>
+</head>
+<body>
+    <h1>Three.js r170 Upgrade Test</h1>
+    
+    <div id="status" class="status info">
+        Testing Three.js compatibility layer...
+    </div>
+    
+    <canvas id="testCanvas" width="400" height="300"></canvas>
+    
+    <div id="results">
+        <h3>Test Results:</h3>
+        <ul id="testList"></ul>
+    </div>
+
+    <!-- Three.js Official CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.min.js"></script>
+    
+    <!-- Three.js Compatibility Layer -->
+    <script src="js/three-compatibility.js"></script>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const testList = document.getElementById('testList');
+        const canvas = document.getElementById('testCanvas');
+        
+        function addTestResult(name, success, message = '') {
+            const li = document.createElement('li');
+            li.style.color = success ? '#4a4' : '#a44';
+            li.innerHTML = `${success ? '✅' : '❌'} ${name}${message ? ': ' + message : ''}`;
+            testList.appendChild(li);
+            return success;
+        }
+        
+        function runTests() {
+            let allTestsPassed = true;
+            
+            try {
+                // Test 1: Three.js loaded
+                const threeLoaded = typeof THREE !== 'undefined';
+                allTestsPassed &= addTestResult('Three.js Loaded', threeLoaded, threeLoaded ? `r${THREE.REVISION}` : 'Not found');
+                
+                if (!threeLoaded) {
+                    statusDiv.textContent = 'Failed: Three.js not loaded';
+                    statusDiv.className = 'status error';
+                    return;
+                }
+                
+                // Test 2: Compatibility layer loaded
+                const compatLoaded = typeof ThreeCompat !== 'undefined';
+                allTestsPassed &= addTestResult('Compatibility Layer Loaded', compatLoaded);
+                
+                // Test 3: Test renderer creation
+                try {
+                    const renderer = ThreeCompat ? 
+                        ThreeCompat.createRenderer({ canvas: canvas }) :
+                        new THREE.WebGLRenderer({ canvas: canvas });
+                    allTestsPassed &= addTestResult('Renderer Creation', true, 'WebGLRenderer created');
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Renderer Creation', false, e.message);
+                }
+                
+                // Test 4: Test geometry creation
+                try {
+                    const boxGeometry = ThreeCompat ?
+                        ThreeCompat.createBoxGeometry(1, 1, 1) :
+                        new THREE.BoxGeometry(1, 1, 1);
+                    allTestsPassed &= addTestResult('Box Geometry', true, 'BoxGeometry created');
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Box Geometry', false, e.message);
+                }
+                
+                // Test 5: Test material creation
+                try {
+                    const material = ThreeCompat ?
+                        ThreeCompat.createMaterial('MeshPhongMaterial', { color: 0xff0000 }) :
+                        new THREE.MeshPhongMaterial({ color: 0xff0000 });
+                    allTestsPassed &= addTestResult('Material Creation', true, 'MeshPhongMaterial created');
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Material Creation', false, e.message);
+                }
+                
+                // Test 6: Test texture creation
+                try {
+                    const testCanvas = document.createElement('canvas');
+                    testCanvas.width = 32;
+                    testCanvas.height = 32;
+                    const ctx = testCanvas.getContext('2d');
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(0, 0, 32, 32);
+                    
+                    const texture = ThreeCompat ?
+                        ThreeCompat.createCanvasTexture(testCanvas) :
+                        new THREE.CanvasTexture(testCanvas);
+                    allTestsPassed &= addTestResult('Canvas Texture', true, 'CanvasTexture created');
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Canvas Texture', false, e.message);
+                }
+                
+                // Test 7: Test light creation
+                try {
+                    const ambientLight = ThreeCompat ?
+                        ThreeCompat.createAmbientLight(0x404080, 0.4) :
+                        new THREE.AmbientLight(0x404080, 0.4);
+                    allTestsPassed &= addTestResult('Ambient Light', true, 'AmbientLight created');
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Ambient Light', false, e.message);
+                }
+                
+                // Test 8: Test scene and basic render
+                try {
+                    const scene = new THREE.Scene();
+                    const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 1000);
+                    const renderer = new THREE.WebGLRenderer({ canvas: canvas });
+                    
+                    // Create a simple test mesh
+                    const geometry = new THREE.BoxGeometry(1, 1, 1);
+                    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                    const cube = new THREE.Mesh(geometry, material);
+                    scene.add(cube);
+                    
+                    camera.position.z = 5;
+                    renderer.setSize(canvas.width, canvas.height);
+                    renderer.render(scene, camera);
+                    
+                    allTestsPassed &= addTestResult('Basic Rendering', true, 'Scene rendered successfully');
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Basic Rendering', false, e.message);
+                }
+                
+                // Update status
+                if (allTestsPassed) {
+                    statusDiv.textContent = '✅ All tests passed! Three.js r170 upgrade successful';
+                    statusDiv.className = 'status success';
+                } else {
+                    statusDiv.textContent = '❌ Some tests failed. Check compatibility layer';
+                    statusDiv.className = 'status error';
+                }
+                
+            } catch (error) {
+                statusDiv.textContent = `❌ Test suite failed: ${error.message}`;
+                statusDiv.className = 'status error';
+                addTestResult('Test Suite', false, error.message);
+            }
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 100); // Small delay to ensure everything is loaded
+        });
+    </script>
+</body>
+</html>
