@@ -43,17 +43,35 @@
             
             async function loadDependentScripts() {
                 console.log('Loading dependent scripts sequentially...');
+                
+                // First, verify THREE is actually available
+                if (typeof THREE === 'undefined') {
+                    console.error('THREE is still undefined after loading attempts');
+                    throw new Error('Three.js loading failed - cannot proceed');
+                }
+                
+                console.log('✅ THREE confirmed available, proceeding with dependent scripts...');
+                
+                let scriptsLoaded = 0;
+                const totalScripts = dependentScripts.length;
+                
                 for (const scriptSrc of dependentScripts) {
                     try {
                         await loadScript(scriptSrc);
-                        console.log(`✅ Loaded: ${scriptSrc}`);
+                        scriptsLoaded++;
+                        console.log(`✅ Loaded (${scriptsLoaded}/${totalScripts}): ${scriptSrc}`);
+                        
+                        // Add small delay to ensure script execution completes
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        
                     } catch (error) {
                         console.error(`❌ Failed to load: ${scriptSrc}`, error);
+                        // Continue loading other scripts even if one fails
                     }
                 }
                 
-                // Script loading verification
-                console.log('Script loading verification:', {
+                // Final verification with detailed checks
+                const verification = {
                     THREE: typeof THREE,
                     ThreeCompat: typeof ThreeCompat,
                     MazeGenerator: typeof MazeGenerator,
@@ -61,29 +79,67 @@
                     Controls: typeof Controls,
                     UIManager: typeof UIManager,
                     GameManager: typeof GameManager
-                });
+                };
+                
+                console.log('Script loading verification:', verification);
+                
+                // Check for critical components
+                const criticalComponents = ['THREE', 'GameEngine', 'MazeGenerator', 'GameManager'];
+                const missingComponents = criticalComponents.filter(comp => verification[comp] === 'undefined');
+                
+                if (missingComponents.length > 0) {
+                    console.error('Critical components missing:', missingComponents);
+                    throw new Error(`Critical components failed to load: ${missingComponents.join(', ')}`);
+                }
                 
                 // Log Three.js version info
                 if (typeof THREE !== 'undefined' && THREE.REVISION) {
                     console.log('Three.js version:', 'r' + THREE.REVISION);
                 }
                 
+                console.log('✅ All critical components loaded successfully');
+                
                 // Initialize game when all scripts are loaded
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', initializeGame);
+                    document.addEventListener('DOMContentLoaded', initializeSafeGame);
                 } else {
-                    initializeGame();
+                    initializeSafeGame();
                 }
             }
             
+            async function initializeSafeGame() {
+                console.log('DOM読み込み完了 - 安全なゲーム初期化開始...');
+                
+                try {
+                    // Final safety check before initialization
+                    if (typeof GameManager === 'undefined') {
+                        throw new Error('GameManager class not available');
+                    }
+                    
+                    // グローバルゲームマネージャー作成
+                    window.gameManager = new GameManager();
+                    
+                    // 初期化実行
+                    const initResult = await window.gameManager.init();
+                    
+                    if (!initResult) {
+                        throw new Error('Game manager initialization failed');
+                    }
+                    
+                    console.log('✅ Game initialized successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Game initialization failed:', error);
+                    
+                    // Show user-friendly error message
+                    const errorMessage = `ゲームの初期化に失敗しました。\n\n詳細: ${error.message}\n\nページを再読み込みしてください。`;
+                    alert(errorMessage);
+                }
+            }
+            
+            // Legacy function for compatibility
             async function initializeGame() {
-                console.log('DOM読み込み完了 - ゲーム初期化開始...');
-                
-                // グローバルゲームマネージャー作成
-                window.gameManager = new GameManager();
-                
-                // 初期化実行
-                await window.gameManager.init();
+                return initializeSafeGame();
             }
             
             function loadThreeJS() {
@@ -98,15 +154,32 @@
                 
                 script.onload = function() {
                     console.log(`Three.js loaded successfully from: ${cdnSources[currentCdnIndex]}`);
-                    if (typeof THREE !== 'undefined') {
-                        console.log('THREE object available, version:', THREE.REVISION ? 'r' + THREE.REVISION : 'unknown');
-                        // Once Three.js is loaded, load all dependent scripts
-                        loadDependentScripts();
-                    } else {
-                        console.warn('THREE object not available after load');
-                        currentCdnIndex++;
-                        setTimeout(loadThreeJS, 100);
-                    }
+                    
+                    // Add a small delay to ensure script execution completes
+                    setTimeout(() => {
+                        if (typeof THREE !== 'undefined') {
+                            console.log('✅ THREE object confirmed available, version:', THREE.REVISION ? 'r' + THREE.REVISION : 'unknown');
+                            
+                            // Validate essential THREE components
+                            const requiredComponents = ['Scene', 'PerspectiveCamera', 'WebGLRenderer', 'BoxGeometry', 'MeshBasicMaterial'];
+                            const missingComponents = requiredComponents.filter(comp => typeof THREE[comp] !== 'function');
+                            
+                            if (missingComponents.length > 0) {
+                                console.warn('Missing THREE components:', missingComponents);
+                                console.warn('Available THREE components:', Object.keys(THREE));
+                            }
+                            
+                            // Proceed with dependent script loading
+                            loadDependentScripts().catch(error => {
+                                console.error('Failed to load dependent scripts:', error);
+                                alert('スクリプトの読み込みに失敗しました。ページを再読み込みしてください。');
+                            });
+                        } else {
+                            console.warn('THREE object not available after load, trying next CDN');
+                            currentCdnIndex++;
+                            setTimeout(loadThreeJS, 100);
+                        }
+                    }, 200); // Give time for script execution
                 };
                 
                 script.onerror = function() {
