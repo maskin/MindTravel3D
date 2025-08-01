@@ -10,28 +10,46 @@ class GameManager {
     
     async init() {
         console.log('ゲーム管理システム初期化開始...');
+        console.log('Environment check:', {
+            window: typeof window,
+            document: typeof document,
+            THREE: typeof THREE,
+            GameEngine: typeof GameEngine,
+            MazeGenerator: typeof MazeGenerator,
+            Controls: typeof Controls,
+            UIManager: typeof UIManager
+        });
         
         try {
             // エラーハンドリング設定
             this.setupErrorHandling();
             
             // UIマネージャー初期化
+            console.log('UIManager initialization...');
             this.uiManager = new UIManager();
             window.uiManager = this.uiManager;
+            console.log('UIManager initialized successfully');
             
             // 3Dエンジン初期化
+            console.log('GameEngine initialization...');
             this.gameEngine = new GameEngine();
+            console.log('GameEngine object created, calling init...');
             const engineInit = await this.gameEngine.init();
+            console.log('GameEngine init result:', engineInit);
             
             if (!engineInit) {
                 throw new Error('3Dエンジンの初期化に失敗しました');
             }
             
             // 迷路生成器初期化
+            console.log('MazeGenerator initialization...');
             this.mazeGenerator = new MazeGenerator(50, 50);
+            console.log('MazeGenerator initialized successfully');
             
             // 操作システム初期化
+            console.log('Controls initialization...');
             this.controls = new Controls(this.gameEngine);
+            console.log('Controls initialized successfully');
             
             // PWA設定
             this.initPWA();
@@ -46,8 +64,21 @@ class GameManager {
             this.uiManager.showStartMenu();
             
         } catch (error) {
-            console.error('初期化エラー:', error);
-            this.uiManager.showError('ゲームの初期化に失敗しました:\n' + error.message);
+            console.error('初期化エラー - 詳細情報:', {
+                error: error,
+                message: error.message,
+                stack: error.stack,
+                engineState: this.gameEngine ? 'created' : 'null',
+                uiManagerState: this.uiManager ? 'created' : 'null'
+            });
+            
+            // Make sure we have UIManager before showing error
+            if (this.uiManager) {
+                this.uiManager.showError('ゲームの初期化に失敗しました:\n' + error.message);
+            } else {
+                // Fallback error display
+                alert('ゲームの初期化に失敗しました:\n' + error.message);
+            }
         }
     }
     

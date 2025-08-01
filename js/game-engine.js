@@ -30,11 +30,41 @@ class GameEngine {
     
     async init() {
         console.log('3Dエンジン初期化開始...');
+        console.log('Browser info:', {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            cookieEnabled: navigator.cookieEnabled,
+            onLine: navigator.onLine
+        });
         
         try {
             // Three.jsの確認
+            console.log('THREE availability check:', typeof THREE);
             if (typeof THREE === 'undefined') {
+                console.error('THREE is undefined - script loading failed');
                 throw new Error('Three.js が読み込まれていません');
+            }
+            
+            console.log('THREE object keys:', Object.keys(THREE));
+            console.log('Required THREE components available:', {
+                Scene: typeof THREE.Scene,
+                PerspectiveCamera: typeof THREE.PerspectiveCamera,
+                WebGLRenderer: typeof THREE.WebGLRenderer,
+                Vector3: typeof THREE.Vector3,
+                Texture: typeof THREE.Texture,
+                CanvasTexture: typeof THREE.CanvasTexture
+            });
+            
+            // Test CanvasTexture constructor
+            try {
+                console.log('Testing CanvasTexture constructor...');
+                const testCanvas = document.createElement('canvas');
+                testCanvas.width = 32;
+                testCanvas.height = 32;
+                const testTexture = new THREE.CanvasTexture(testCanvas);
+                console.log('CanvasTexture test successful:', testTexture);
+            } catch (textureError) {
+                console.error('CanvasTexture test failed:', textureError);
             }
             
             this.initRenderer();
@@ -45,7 +75,13 @@ class GameEngine {
             console.log('3Dエンジン初期化完了');
             return true;
         } catch (error) {
-            console.error('3Dエンジン初期化エラー:', error);
+            console.error('3Dエンジン初期化エラー - 詳細情報:', {
+                error: error,
+                message: error.message,
+                stack: error.stack,
+                THREEDefined: typeof THREE,
+                canvasExists: !!document.getElementById('gameCanvas')
+            });
             return false;
         }
     }
@@ -57,31 +93,55 @@ class GameEngine {
         }
         
         console.log('Canvas found:', canvas);
+        console.log('Canvas details:', {
+            id: canvas.id,
+            width: canvas.width,
+            height: canvas.height,
+            clientWidth: canvas.clientWidth,
+            clientHeight: canvas.clientHeight,
+            offsetWidth: canvas.offsetWidth,
+            offsetHeight: canvas.offsetHeight
+        });
         console.log('Canvas computed style:', window.getComputedStyle(canvas));
         
-        this.renderer = new THREE.WebGLRenderer({ 
-            canvas: canvas,
-            antialias: true,
-            alpha: false
-        });
-        
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.setClearColor(0x000000);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.fog = true;
-        
-        // Test canvas immediately
-        console.log('Testing canvas rendering...');
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(50, 50, 100, 100);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '20px Arial';
-            ctx.fillText('CANVAS TEST', 60, 110);
-            console.log('Canvas test completed - green square and text drawn');
+        try {
+            console.log('Creating THREE.WebGLRenderer...');
+            this.renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
+                antialias: true,
+                alpha: false
+            });
+            console.log('THREE.WebGLRenderer created successfully:', this.renderer);
+            
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            this.renderer.setClearColor(0x000000);
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            this.renderer.fog = true;
+            
+            // Test canvas immediately
+            console.log('Testing canvas rendering...');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(50, 50, 100, 100);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px Arial';
+                ctx.fillText('CANVAS TEST', 60, 110);
+                console.log('Canvas test completed - green square and text drawn');
+            } else {
+                console.warn('Could not get 2D context for canvas test');
+            }
+        } catch (error) {
+            console.error('Error in initRenderer:', {
+                error: error,
+                message: error.message,
+                stack: error.stack,
+                canvasState: canvas ? 'exists' : 'null',
+                THREEWebGLRenderer: typeof THREE.WebGLRenderer
+            });
+            throw error;
         }
     }
     
@@ -173,7 +233,97 @@ class GameEngine {
             ctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
         }
         
-        const wallTexture = new THREE.CanvasTexture(canvas);
+        // COMPREHENSIVE CanvasTexture debugging
+        console.log('=== CANVASTEXTURE DIAGNOSTIC START ===');
+        console.log('Canvas object:', canvas);
+        console.log('Canvas type:', typeof canvas);
+        console.log('Canvas constructor:', canvas.constructor.name);
+        console.log('Canvas is HTMLCanvasElement?', canvas instanceof HTMLCanvasElement);
+        console.log('Canvas width:', canvas.width, 'height:', canvas.height);
+        
+        // Global THREE object check
+        console.log('Global THREE object exists?', !!window.THREE);
+        console.log('Global THREE type:', typeof window.THREE);
+        
+        if (window.THREE) {
+            console.log('THREE object keys:', Object.keys(window.THREE));
+            console.log('THREE.CanvasTexture exists?', 'CanvasTexture' in window.THREE);
+            console.log('THREE.CanvasTexture type:', typeof window.THREE.CanvasTexture);
+            console.log('THREE.CanvasTexture value:', window.THREE.CanvasTexture);
+            
+            // Test if it's actually callable
+            console.log('CanvasTexture is function?', typeof window.THREE.CanvasTexture === 'function');
+            console.log('CanvasTexture has prototype?', !!window.THREE.CanvasTexture.prototype);
+            
+            // Test Texture base class
+            console.log('THREE.Texture exists?', !!window.THREE.Texture);
+            console.log('THREE.Texture type:', typeof window.THREE.Texture);
+        }
+        
+        // Try to create test canvas and texture
+        console.log('--- Testing CanvasTexture constructor ---');
+        try {
+            const testCanvas = document.createElement('canvas');
+            testCanvas.width = 2;
+            testCanvas.height = 2;
+            console.log('Test canvas created:', testCanvas);
+            
+            const testTexture = new window.THREE.CanvasTexture(testCanvas);
+            console.log('Test CanvasTexture SUCCESS:', testTexture);
+            console.log('Test texture type:', typeof testTexture);
+            console.log('Test texture isCanvasTexture?', testTexture.isCanvasTexture);
+        } catch (testError) {
+            console.error('Test CanvasTexture FAILED:', testError);
+            console.error('Test error name:', testError.name);
+            console.error('Test error message:', testError.message);
+            console.error('Test error stack:', testError.stack);
+        }
+        
+        console.log('--- Attempting actual CanvasTexture creation ---');
+        
+        // Extra verification that CanvasTexture exists and is a constructor
+        if (!window.THREE || !window.THREE.CanvasTexture) {
+            console.error('❌ THREE.CanvasTexture not found in window.THREE');
+            throw new Error('THREE.CanvasTexture is not available');
+        }
+        
+        if (typeof window.THREE.CanvasTexture !== 'function') {
+            console.error('❌ THREE.CanvasTexture is not a function:', typeof window.THREE.CanvasTexture);
+            throw new Error('THREE.CanvasTexture is not a constructor');
+        }
+        
+        console.log('✓ CanvasTexture is available and is a function');
+        console.log('  CanvasTexture source preview:', window.THREE.CanvasTexture.toString().substring(0, 200));
+        
+        let wallTexture;
+        try {
+            console.log('Calling new THREE.CanvasTexture(canvas)...');
+            wallTexture = new THREE.CanvasTexture(canvas);
+            console.log('✅ CanvasTexture created successfully:', wallTexture);
+            console.log('Texture properties:', {
+                isCanvasTexture: wallTexture.isCanvasTexture,
+                needsUpdate: wallTexture.needsUpdate,
+                image: wallTexture.image,
+                canvas: wallTexture.canvas
+            });
+        } catch (canvasTextureError) {
+            console.error('❌ Standard CanvasTexture creation FAILED');
+            console.error('Error name:', canvasTextureError.name);
+            console.error('Error message:', canvasTextureError.message);
+            console.error('Error stack:', canvasTextureError.stack);
+            
+            // Try emergency fallback
+            console.log('🔧 Attempting emergency fallback...');
+            try {
+                wallTexture = window.createCanvasTexture(canvas);
+                console.log('✅ Emergency CanvasTexture created successfully:', wallTexture);
+            } catch (emergencyError) {
+                console.error('❌ Emergency fallback also failed:', emergencyError);
+                throw canvasTextureError; // Throw original error
+            }
+        }
+        console.log('=== CANVASTEXTURE DIAGNOSTIC END ===');
+        
         wallTexture.wrapS = THREE.RepeatWrapping;
         wallTexture.wrapT = THREE.RepeatWrapping;
         wallTexture.repeat.set(1, 1);
@@ -211,7 +361,22 @@ class GameEngine {
             floorCtx.stroke();
         }
         
-        const floorTexture = new THREE.CanvasTexture(floorCanvas);
+        console.log('=== FLOOR TEXTURE CREATION ===');
+        let floorTexture;
+        try {
+            floorTexture = new THREE.CanvasTexture(floorCanvas);
+            console.log('✅ Floor CanvasTexture created successfully');
+        } catch (floorTextureError) {
+            console.error('❌ Floor CanvasTexture creation FAILED:', floorTextureError);
+            console.log('🔧 Attempting emergency fallback for floor texture...');
+            try {
+                floorTexture = window.createCanvasTexture(floorCanvas);
+                console.log('✅ Emergency floor CanvasTexture created successfully');
+            } catch (emergencyError) {
+                console.error('❌ Emergency floor fallback also failed:', emergencyError);
+                throw floorTextureError;
+            }
+        }
         floorTexture.wrapS = THREE.RepeatWrapping;
         floorTexture.wrapT = THREE.RepeatWrapping;
         floorTexture.repeat.set(1, 1);
@@ -240,7 +405,22 @@ class GameEngine {
             ceilingCtx.fillRect(Math.random() * 64, Math.random() * 64, 3, 3);
         }
         
-        const ceilingTexture = new THREE.CanvasTexture(ceilingCanvas);
+        console.log('=== CEILING TEXTURE CREATION ===');
+        let ceilingTexture;
+        try {
+            ceilingTexture = new THREE.CanvasTexture(ceilingCanvas);
+            console.log('✅ Ceiling CanvasTexture created successfully');
+        } catch (ceilingTextureError) {
+            console.error('❌ Ceiling CanvasTexture creation FAILED:', ceilingTextureError);
+            console.log('🔧 Attempting emergency fallback for ceiling texture...');
+            try {
+                ceilingTexture = window.createCanvasTexture(ceilingCanvas);
+                console.log('✅ Emergency ceiling CanvasTexture created successfully');
+            } catch (emergencyError) {
+                console.error('❌ Emergency ceiling fallback also failed:', emergencyError);
+                throw ceilingTextureError;
+            }
+        }
         ceilingTexture.wrapS = THREE.RepeatWrapping;
         ceilingTexture.wrapT = THREE.RepeatWrapping;
         
