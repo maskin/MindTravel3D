@@ -10,8 +10,11 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
     
-    <!-- Three.js Local -->
-    <script src="three.min.js?v=2025-07-29-07-fix"></script>
+    <!-- Three.js Official CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.min.js"></script>
+    
+    <!-- Three.js Compatibility Layer -->
+    <script src="js/three-compatibility.js"></script>
     
     <style>
         * {
@@ -245,22 +248,28 @@
     </div>
 
     <!-- Game Scripts -->
-    <script src="js/maze-generator.js?v=2025-07-29-05"></script>
-    <script src="js/game-engine.js?v=2025-07-29-05"></script>
-    <script src="js/controls.js?v=2025-07-29-05"></script>
-    <script src="js/ui-manager.js?v=2025-07-29-05"></script>
-    <script src="js/main.js?v=2025-07-29-05"></script>
+    <script src="js/maze-generator.js?v=2025-08-01-upgraded"></script>
+    <script src="js/game-engine.js?v=2025-08-01-upgraded"></script>
+    <script src="js/controls.js?v=2025-08-01-upgraded"></script>
+    <script src="js/ui-manager.js?v=2025-08-01-upgraded"></script>
+    <script src="js/main.js?v=2025-08-01-upgraded"></script>
     
     <!-- Script loading verification -->
     <script>
         console.log('Script loading verification:', {
             THREE: typeof THREE,
+            ThreeCompat: typeof ThreeCompat,
             MazeGenerator: typeof MazeGenerator,
             GameEngine: typeof GameEngine,
             Controls: typeof Controls,
             UIManager: typeof UIManager,
             GameManager: typeof GameManager
         });
+        
+        // Log Three.js version info
+        if (typeof THREE !== 'undefined' && THREE.REVISION) {
+            console.log('Three.js version:', 'r' + THREE.REVISION);
+        }
     </script>
 </body>
 </html>

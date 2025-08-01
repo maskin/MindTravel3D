@@ -162,38 +162,50 @@ class GameEngine {
     }
     
     initLights() {
-        // Reduced ambient light for more dramatic atmosphere
-        const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
+        // Ambient light - Use compatibility layer
+        const ambientLight = window.ThreeCompat ?
+            window.ThreeCompat.createAmbientLight(0x404080, 0.4) :
+            new THREE.AmbientLight(0x404080, 0.4);
         this.scene.add(ambientLight);
         
-        // Enhanced player light (flashlight effect) for immersive experience
-        this.playerLight = new THREE.SpotLight(0xffffcc, 2.5, 12, Math.PI / 3, 0.4);
-        this.playerLight.castShadow = true;
-        this.playerLight.shadow.mapSize.width = 1024;
-        this.playerLight.shadow.mapSize.height = 1024;
-        this.playerLight.shadow.camera.near = 0.1;
-        this.playerLight.shadow.camera.far = 12;
-        this.scene.add(this.playerLight);
+        // Enhanced player light (flashlight effect) - Use enhanced spot light if available
+        if (THREE.SpotLight) {
+            this.playerLight = new THREE.SpotLight(0xffffcc, 2.5, 12, Math.PI / 3, 0.4);
+            this.playerLight.castShadow = true;
+            this.playerLight.shadow.mapSize.width = 1024;
+            this.playerLight.shadow.mapSize.height = 1024;
+            this.playerLight.shadow.camera.near = 0.1;
+            this.playerLight.shadow.camera.far = 12;
+            this.scene.add(this.playerLight);
+        }
         
-        // Add subtle overhead lighting for depth
-        const topLight = new THREE.DirectionalLight(0x6666aa, 0.3);
+        // Overhead lighting - Use compatibility layer for enhanced shadows
+        const topLight = window.ThreeCompat ?
+            window.ThreeCompat.createDirectionalLight(0x6666aa, 0.3) :
+            new THREE.DirectionalLight(0x6666aa, 0.3);
         topLight.position.set(0, 10, 0);
         topLight.castShadow = false; // Keep performance good
         this.scene.add(topLight);
         
-        // Add some atmospheric side lighting
-        const sideLight1 = new THREE.DirectionalLight(0x4444aa, 0.2);
+        // Atmospheric side lighting
+        const sideLight1 = window.ThreeCompat ?
+            window.ThreeCompat.createDirectionalLight(0x4444aa, 0.2) :
+            new THREE.DirectionalLight(0x4444aa, 0.2);
         sideLight1.position.set(10, 5, 10);
         this.scene.add(sideLight1);
         
-        const sideLight2 = new THREE.DirectionalLight(0x4444aa, 0.2);
+        const sideLight2 = window.ThreeCompat ?
+            window.ThreeCompat.createDirectionalLight(0x4444aa, 0.2) :
+            new THREE.DirectionalLight(0x4444aa, 0.2);
         sideLight2.position.set(-10, 5, -10);
         this.scene.add(sideLight2);
         
         // Enhanced goal light with more dramatic effect
-        this.goalLight = new THREE.PointLight(0xff3333, 2.0, 15);
-        this.goalLight.position.set(0, 3, 0);
-        this.lights.push(this.goalLight);
+        if (THREE.PointLight) {
+            this.goalLight = new THREE.PointLight(0xff3333, 2.0, 15);
+            this.goalLight.position.set(0, 3, 0);
+            this.lights.push(this.goalLight);
+        }
     }
     
     async createMaze(mazeData) {
@@ -202,7 +214,7 @@ class GameEngine {
         // 既存の迷路オブジェクトを削除
         this.clearMaze();
         
-        // Create procedural textures for more realistic appearance
+        // Create procedural textures using compatibility layer
         const canvas = document.createElement('canvas');
         canvas.width = 128;
         canvas.height = 128;
@@ -233,109 +245,52 @@ class GameEngine {
             ctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
         }
         
-        // COMPREHENSIVE CanvasTexture debugging
-        console.log('=== CANVASTEXTURE DIAGNOSTIC START ===');
-        console.log('Canvas object:', canvas);
-        console.log('Canvas type:', typeof canvas);
-        console.log('Canvas constructor:', canvas.constructor.name);
-        console.log('Canvas is HTMLCanvasElement?', canvas instanceof HTMLCanvasElement);
-        console.log('Canvas width:', canvas.width, 'height:', canvas.height);
+        console.log('Creating wall texture using compatibility layer...');
         
-        // Global THREE object check
-        console.log('Global THREE object exists?', !!window.THREE);
-        console.log('Global THREE type:', typeof window.THREE);
-        
-        if (window.THREE) {
-            console.log('THREE object keys:', Object.keys(window.THREE));
-            console.log('THREE.CanvasTexture exists?', 'CanvasTexture' in window.THREE);
-            console.log('THREE.CanvasTexture type:', typeof window.THREE.CanvasTexture);
-            console.log('THREE.CanvasTexture value:', window.THREE.CanvasTexture);
-            
-            // Test if it's actually callable
-            console.log('CanvasTexture is function?', typeof window.THREE.CanvasTexture === 'function');
-            console.log('CanvasTexture has prototype?', !!window.THREE.CanvasTexture.prototype);
-            
-            // Test Texture base class
-            console.log('THREE.Texture exists?', !!window.THREE.Texture);
-            console.log('THREE.Texture type:', typeof window.THREE.Texture);
-        }
-        
-        // Try to create test canvas and texture
-        console.log('--- Testing CanvasTexture constructor ---');
-        try {
-            const testCanvas = document.createElement('canvas');
-            testCanvas.width = 2;
-            testCanvas.height = 2;
-            console.log('Test canvas created:', testCanvas);
-            
-            const testTexture = new window.THREE.CanvasTexture(testCanvas);
-            console.log('Test CanvasTexture SUCCESS:', testTexture);
-            console.log('Test texture type:', typeof testTexture);
-            console.log('Test texture isCanvasTexture?', testTexture.isCanvasTexture);
-        } catch (testError) {
-            console.error('Test CanvasTexture FAILED:', testError);
-            console.error('Test error name:', testError.name);
-            console.error('Test error message:', testError.message);
-            console.error('Test error stack:', testError.stack);
-        }
-        
-        console.log('--- Attempting actual CanvasTexture creation ---');
-        
-        // Extra verification that CanvasTexture exists and is a constructor
-        if (!window.THREE || !window.THREE.CanvasTexture) {
-            console.error('❌ THREE.CanvasTexture not found in window.THREE');
-            throw new Error('THREE.CanvasTexture is not available');
-        }
-        
-        if (typeof window.THREE.CanvasTexture !== 'function') {
-            console.error('❌ THREE.CanvasTexture is not a function:', typeof window.THREE.CanvasTexture);
-            throw new Error('THREE.CanvasTexture is not a constructor');
-        }
-        
-        console.log('✓ CanvasTexture is available and is a function');
-        console.log('  CanvasTexture source preview:', window.THREE.CanvasTexture.toString().substring(0, 200));
-        
+        // Use compatibility layer for texture creation
         let wallTexture;
         try {
-            console.log('Calling new THREE.CanvasTexture(canvas)...');
-            wallTexture = new THREE.CanvasTexture(canvas);
-            console.log('✅ CanvasTexture created successfully:', wallTexture);
-            console.log('Texture properties:', {
-                isCanvasTexture: wallTexture.isCanvasTexture,
-                needsUpdate: wallTexture.needsUpdate,
-                image: wallTexture.image,
-                canvas: wallTexture.canvas
-            });
-        } catch (canvasTextureError) {
-            console.error('❌ Standard CanvasTexture creation FAILED');
-            console.error('Error name:', canvasTextureError.name);
-            console.error('Error message:', canvasTextureError.message);
-            console.error('Error stack:', canvasTextureError.stack);
+            wallTexture = window.ThreeCompat ?
+                window.ThreeCompat.createCanvasTexture(canvas) :
+                new THREE.CanvasTexture(canvas);
             
-            // Try emergency fallback
-            console.log('🔧 Attempting emergency fallback...');
-            try {
-                wallTexture = window.createCanvasTexture(canvas);
-                console.log('✅ Emergency CanvasTexture created successfully:', wallTexture);
-            } catch (emergencyError) {
-                console.error('❌ Emergency fallback also failed:', emergencyError);
-                throw canvasTextureError; // Throw original error
-            }
+            console.log('✅ Wall texture created successfully');
+        } catch (error) {
+            console.error('❌ Wall texture creation failed:', error);
+            // Fallback texture
+            wallTexture = {
+                image: canvas,
+                needsUpdate: true,
+                wrapS: THREE.RepeatWrapping || 1000,
+                wrapT: THREE.RepeatWrapping || 1000,
+                repeat: { x: 1, y: 1, set: (x, y) => { this.x = x; this.y = y; } }
+            };
         }
-        console.log('=== CANVASTEXTURE DIAGNOSTIC END ===');
         
-        wallTexture.wrapS = THREE.RepeatWrapping;
-        wallTexture.wrapT = THREE.RepeatWrapping;
-        wallTexture.repeat.set(1, 1);
+        if (wallTexture.wrapS !== undefined) {
+            wallTexture.wrapS = THREE.RepeatWrapping;
+            wallTexture.wrapT = THREE.RepeatWrapping;
+            wallTexture.repeat.set(1, 1);
+        }
         
-        // Enhanced wall material with texture and better lighting response
-        const wallGeometry = new THREE.BoxGeometry(1, 3, 1);
-        const wallMaterial = new THREE.MeshPhongMaterial({ 
-            map: wallTexture,
-            color: 0x888888,
-            shininess: 30,
-            transparent: false
-        });
+        // Enhanced wall material using compatibility layer
+        const wallGeometry = window.ThreeCompat ?
+            window.ThreeCompat.createBoxGeometry(1, 3, 1) :
+            new THREE.BoxGeometry(1, 3, 1);
+            
+        const wallMaterial = window.ThreeCompat ?
+            window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
+                map: wallTexture,
+                color: 0x888888,
+                shininess: 30,
+                transparent: false
+            }) :
+            new THREE.MeshPhongMaterial({ 
+                map: wallTexture,
+                color: 0x888888,
+                shininess: 30,
+                transparent: false
+            });
         
         // Create floor texture
         const floorCanvas = document.createElement('canvas');
@@ -361,34 +316,48 @@ class GameEngine {
             floorCtx.stroke();
         }
         
-        console.log('=== FLOOR TEXTURE CREATION ===');
+        console.log('Creating floor texture using compatibility layer...');
         let floorTexture;
         try {
-            floorTexture = new THREE.CanvasTexture(floorCanvas);
-            console.log('✅ Floor CanvasTexture created successfully');
+            floorTexture = window.ThreeCompat ?
+                window.ThreeCompat.createCanvasTexture(floorCanvas) :
+                new THREE.CanvasTexture(floorCanvas);
+            console.log('✅ Floor texture created successfully');
         } catch (floorTextureError) {
-            console.error('❌ Floor CanvasTexture creation FAILED:', floorTextureError);
-            console.log('🔧 Attempting emergency fallback for floor texture...');
-            try {
-                floorTexture = window.createCanvasTexture(floorCanvas);
-                console.log('✅ Emergency floor CanvasTexture created successfully');
-            } catch (emergencyError) {
-                console.error('❌ Emergency floor fallback also failed:', emergencyError);
-                throw floorTextureError;
-            }
+            console.error('❌ Floor texture creation failed:', floorTextureError);
+            floorTexture = {
+                image: floorCanvas,
+                needsUpdate: true,
+                wrapS: THREE.RepeatWrapping || 1000,
+                wrapT: THREE.RepeatWrapping || 1000,
+                repeat: { x: 1, y: 1, set: (x, y) => { this.x = x; this.y = y; } }
+            };
         }
-        floorTexture.wrapS = THREE.RepeatWrapping;
-        floorTexture.wrapT = THREE.RepeatWrapping;
-        floorTexture.repeat.set(1, 1);
         
-        // Enhanced floor material
-        const floorGeometry = new THREE.PlaneGeometry(1, 1);
-        const floorMaterial = new THREE.MeshPhongMaterial({ 
-            map: floorTexture,
-            color: 0x333344,
-            shininess: 10,
-            transparent: false
-        });
+        if (floorTexture.wrapS !== undefined) {
+            floorTexture.wrapS = THREE.RepeatWrapping;
+            floorTexture.wrapT = THREE.RepeatWrapping;
+            floorTexture.repeat.set(1, 1);
+        }
+        
+        // Enhanced floor material using compatibility layer
+        const floorGeometry = window.ThreeCompat ?
+            window.ThreeCompat.createPlaneGeometry(1, 1) :
+            new THREE.PlaneGeometry(1, 1);
+            
+        const floorMaterial = window.ThreeCompat ?
+            window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
+                map: floorTexture,
+                color: 0x333344,
+                shininess: 10,
+                transparent: false
+            }) :
+            new THREE.MeshPhongMaterial({ 
+                map: floorTexture,
+                color: 0x333344,
+                shininess: 10,
+                transparent: false
+            });
         
         // Create ceiling texture
         const ceilingCanvas = document.createElement('canvas');
@@ -405,33 +374,47 @@ class GameEngine {
             ceilingCtx.fillRect(Math.random() * 64, Math.random() * 64, 3, 3);
         }
         
-        console.log('=== CEILING TEXTURE CREATION ===');
+        console.log('Creating ceiling texture using compatibility layer...');
         let ceilingTexture;
         try {
-            ceilingTexture = new THREE.CanvasTexture(ceilingCanvas);
-            console.log('✅ Ceiling CanvasTexture created successfully');
+            ceilingTexture = window.ThreeCompat ?
+                window.ThreeCompat.createCanvasTexture(ceilingCanvas) :
+                new THREE.CanvasTexture(ceilingCanvas);
+            console.log('✅ Ceiling texture created successfully');
         } catch (ceilingTextureError) {
-            console.error('❌ Ceiling CanvasTexture creation FAILED:', ceilingTextureError);
-            console.log('🔧 Attempting emergency fallback for ceiling texture...');
-            try {
-                ceilingTexture = window.createCanvasTexture(ceilingCanvas);
-                console.log('✅ Emergency ceiling CanvasTexture created successfully');
-            } catch (emergencyError) {
-                console.error('❌ Emergency ceiling fallback also failed:', emergencyError);
-                throw ceilingTextureError;
-            }
+            console.error('❌ Ceiling texture creation failed:', ceilingTextureError);
+            ceilingTexture = {
+                image: ceilingCanvas,
+                needsUpdate: true,
+                wrapS: THREE.RepeatWrapping || 1000,
+                wrapT: THREE.RepeatWrapping || 1000,
+                repeat: { x: 1, y: 1, set: (x, y) => { this.x = x; this.y = y; } }
+            };
         }
-        ceilingTexture.wrapS = THREE.RepeatWrapping;
-        ceilingTexture.wrapT = THREE.RepeatWrapping;
         
-        // Add ceiling material for enclosed feeling
-        const ceilingGeometry = new THREE.PlaneGeometry(1, 1);
-        const ceilingMaterial = new THREE.MeshPhongMaterial({ 
-            map: ceilingTexture,
-            color: 0x222233,
-            shininess: 5,
-            transparent: false
-        });
+        if (ceilingTexture.wrapS !== undefined) {
+            ceilingTexture.wrapS = THREE.RepeatWrapping;
+            ceilingTexture.wrapT = THREE.RepeatWrapping;
+        }
+        
+        // Add ceiling material using compatibility layer
+        const ceilingGeometry = window.ThreeCompat ?
+            window.ThreeCompat.createPlaneGeometry(1, 1) :
+            new THREE.PlaneGeometry(1, 1);
+            
+        const ceilingMaterial = window.ThreeCompat ?
+            window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
+                map: ceilingTexture,
+                color: 0x222233,
+                shininess: 5,
+                transparent: false
+            }) :
+            new THREE.MeshPhongMaterial({ 
+                map: ceilingTexture,
+                color: 0x222233,
+                shininess: 5,
+                transparent: false
+            });
         
         // 迷路の作成
         for (let y = 0; y < mazeData.length; y++) {
@@ -456,7 +439,9 @@ class GameEngine {
                     const heightVariation = (Math.sin(x * 0.7) + Math.cos(y * 0.5)) * 0.3;
                     const wallHeight = 3 + heightVariation;
                     
-                    const variableWallGeometry = new THREE.BoxGeometry(1, wallHeight, 1);
+                    const variableWallGeometry = window.ThreeCompat ?
+                        window.ThreeCompat.createBoxGeometry(1, wallHeight, 1) :
+                        new THREE.BoxGeometry(1, wallHeight, 1);
                     const wall = new THREE.Mesh(variableWallGeometry, wallMaterial);
                     wall.position.set(x, wallHeight / 2, y);
                     wall.castShadow = true;
@@ -474,28 +459,49 @@ class GameEngine {
     }
     
     createGoal(x, z) {
-        // Enhanced goal object with glowing effect
-        const goalGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
-        const goalMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xff6666,
-            emissive: 0x441111,
-            shininess: 100,
-            transparent: false
-        });
+        // Enhanced goal object with glowing effect using compatibility layer
+        const goalGeometry = window.ThreeCompat ?
+            window.ThreeCompat.createCylinderGeometry(0.3, 0.3, 2, 16) :
+            new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
+            
+        const goalMaterial = window.ThreeCompat ?
+            window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
+                color: 0xff6666,
+                emissive: 0x441111,
+                shininess: 100,
+                transparent: false
+            }) :
+            new THREE.MeshPhongMaterial({ 
+                color: 0xff6666,
+                emissive: 0x441111,
+                shininess: 100,
+                transparent: false
+            });
         
         this.goal = new THREE.Mesh(goalGeometry, goalMaterial);
         this.goal.position.set(x, 1, z);
         this.scene.add(this.goal);
         
         // Add a glowing ring around the goal for better visibility
-        const ringGeometry = new THREE.RingGeometry(0.4, 0.6, 16);
-        const ringMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xff3333,
-            emissive: 0x331111,
-            transparent: true,
-            opacity: 0.8,
-            shininess: 50
-        });
+        const ringGeometry = (window.ThreeCompat && window.ThreeCompat.createRingGeometry) ?
+            window.ThreeCompat.createRingGeometry(0.4, 0.6, 16) :
+            new THREE.RingGeometry(0.4, 0.6, 16);
+            
+        const ringMaterial = window.ThreeCompat ?
+            window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
+                color: 0xff3333,
+                emissive: 0x331111,
+                transparent: true,
+                opacity: 0.8,
+                shininess: 50
+            }) :
+            new THREE.MeshPhongMaterial({ 
+                color: 0xff3333,
+                emissive: 0x331111,
+                transparent: true,
+                opacity: 0.8,
+                shininess: 50
+            });
         
         const goalRing = new THREE.Mesh(ringGeometry, ringMaterial);
         goalRing.rotation.x = -Math.PI / 2;
@@ -504,13 +510,23 @@ class GameEngine {
         this.walls.push(goalRing); // Add to walls array for cleanup
         
         // Add floating particles around goal
-        const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-        const particleMaterial = new THREE.MeshPhongMaterial({
-            color: 0xff4444,
-            emissive: 0x220000,
-            transparent: true,
-            opacity: 0.7
-        });
+        const particleGeometry = window.ThreeCompat ?
+            window.ThreeCompat.createSphereGeometry(0.05, 8, 8) :
+            new THREE.SphereGeometry(0.05, 8, 8);
+            
+        const particleMaterial = window.ThreeCompat ?
+            window.ThreeCompat.createMaterial('MeshPhongMaterial', {
+                color: 0xff4444,
+                emissive: 0x220000,
+                transparent: true,
+                opacity: 0.7
+            }) :
+            new THREE.MeshPhongMaterial({
+                color: 0xff4444,
+                emissive: 0x220000,
+                transparent: true,
+                opacity: 0.7
+            });
         
         for (let i = 0; i < 6; i++) {
             const particle = new THREE.Mesh(particleGeometry, particleMaterial);
