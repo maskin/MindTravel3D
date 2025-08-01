@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texture API Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .status {
+            text-align: center;
+            margin: 20px;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+        .success { background: #2a5a2a; }
+        .error { background: #5a2a2a; }
+        .info { background: #2a3a5a; }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .pass { background: #2d5a2d; }
+        .fail { background: #5a2d2d; }
+    </style>
+</head>
+<body>
+    <h1>CanvasTexture Core API Test</h1>
+    
+    <div id="status" class="status info">
+        Testing enhanced texture implementations...
+    </div>
+    
+    <div id="results">
+        <h3>Test Results:</h3>
+        <div id="testList"></div>
+    </div>
+
+    <!-- Custom Three.js Implementation -->
+    <script src="three.min.js"></script>
+    
+    <!-- Three.js Compatibility Layer -->
+    <script src="js/three-compatibility.js"></script>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const testList = document.getElementById('testList');
+        
+        function addTestResult(name, success, message = '', details = null) {
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <strong>${success ? '✅' : '❌'} ${name}</strong>
+                ${message ? `<br><small>${message}</small>` : ''}
+                ${details ? `<br><pre style="font-size: 10px; max-height: 100px; overflow-y: auto;">${JSON.stringify(details, null, 2)}</pre>` : ''}
+            `;
+            testList.appendChild(div);
+            return success;
+        }
+        
+        function runTextureTests() {
+            let allTestsPassed = true;
+            
+            try {
+                // Test 1: Three.js loaded
+                const threeLoaded = typeof THREE !== 'undefined';
+                allTestsPassed &= addTestResult('Three.js Loaded', threeLoaded, 
+                    threeLoaded ? 'Custom implementation detected' : 'Not found');
+                
+                if (!threeLoaded) {
+                    statusDiv.textContent = 'Failed: Three.js not loaded';
+                    statusDiv.className = 'status error';
+                    return;
+                }
+                
+                // Test 2: CanvasTexture functionality
+                try {
+                    const testCanvas = document.createElement('canvas');
+                    testCanvas.width = 32;
+                    testCanvas.height = 32;
+                    const ctx = testCanvas.getContext('2d');
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(0, 0, 32, 32);
+                    
+                    const canvasTexture = new THREE.CanvasTexture(testCanvas);
+                    allTestsPassed &= addTestResult('CanvasTexture Creation', 
+                        canvasTexture && canvasTexture.isCanvasTexture, 
+                        'CanvasTexture created successfully',
+                        {
+                            hasImage: !!canvasTexture.image,
+                            needsUpdate: canvasTexture.needsUpdate,
+                            colorSpace: canvasTexture.colorSpace,
+                            wrapS: canvasTexture.wrapS,
+                            wrapT: canvasTexture.wrapT
+                        });
+                } catch (e) {
+                    allTestsPassed &= addTestResult('CanvasTexture Creation', false, e.message);
+                }
+                
+                // Test 3: DataTexture functionality
+                try {
+                    const width = 16, height = 16;
+                    const size = width * height;
+                    const data = new Uint8Array(4 * size);
+                    
+                    // Fill with gradient
+                    for (let i = 0; i < size; i++) {
+                        const x = i % width;
+                        const stride = i * 4;
+                        data[stride] = (x / width) * 255;     // R
+                        data[stride + 1] = 0;                 // G
+                        data[stride + 2] = 255 - (x / width) * 255; // B
+                        data[stride + 3] = 255;               // A
+                    }
+                    
+                    const dataTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
+                    allTestsPassed &= addTestResult('DataTexture Creation', 
+                        dataTexture && dataTexture.isDataTexture, 
+                        'DataTexture created successfully',
+                        {
+                            width: dataTexture.width,
+                            height: dataTexture.height,
+                            format: dataTexture.format,
+                            type: dataTexture.type,
+                            hasData: !!dataTexture.data,
+                            generateMipmaps: dataTexture.generateMipmaps,
+                            flipY: dataTexture.flipY
+                        });
+                } catch (e) {
+                    allTestsPassed &= addTestResult('DataTexture Creation', false, e.message);
+                }
+                
+                // Test 4: TextureLoader functionality
+                try {
+                    const loader = new THREE.TextureLoader();
+                    const hasLoadMethod = typeof loader.load === 'function';
+                    const hasSetPathMethod = typeof loader.setPath === 'function';
+                    
+                    allTestsPassed &= addTestResult('TextureLoader Creation', 
+                        loader && hasLoadMethod && hasSetPathMethod, 
+                        'TextureLoader created with required methods',
+                        {
+                            hasLoad: hasLoadMethod,
+                            hasSetPath: hasSetPathMethod,
+                            path: loader.path
+                        });
+                } catch (e) {
+                    allTestsPassed &= addTestResult('TextureLoader Creation', false, e.message);
+                }
+                
+                // Test 5: Texture constants availability
+                const constants = [
+                    'NearestFilter', 'LinearFilter', 'LinearMipmapLinearFilter',
+                    'RGBAFormat', 'RGBFormat', 'AlphaFormat',
+                    'UnsignedByteType', 'FloatType',
+                    'SRGBColorSpace', 'LinearSRGBColorSpace',
+                    'RepeatWrapping', 'ClampToEdgeWrapping'
+                ];
+                
+                const availableConstants = constants.filter(name => typeof THREE[name] !== 'undefined');
+                allTestsPassed &= addTestResult('Texture Constants', 
+                    availableConstants.length === constants.length, 
+                    `${availableConstants.length}/${constants.length} constants available`,
+                    availableConstants.reduce((acc, name) => {
+                        acc[name] = THREE[name];
+                        return acc;
+                    }, {}));
+                
+                // Test 6: Compatibility layer functionality
+                try {
+                    const compatLoaded = typeof ThreeCompat !== 'undefined';
+                    if (compatLoaded) {
+                        const features = ThreeCompat.getAvailableFeatures();
+                        const hasDataTexture = features.DataTexture !== 'undefined';
+                        const hasTextureLoader = features.TextureLoader !== 'undefined';
+                        
+                        allTestsPassed &= addTestResult('Compatibility Layer', 
+                            hasDataTexture && hasTextureLoader, 
+                            'Enhanced texture APIs detected in compatibility layer',
+                            features);
+                    } else {
+                        allTestsPassed &= addTestResult('Compatibility Layer', false, 'ThreeCompat not loaded');
+                    }
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Compatibility Layer', false, e.message);
+                }
+                
+                // Test 7: Procedural texture generation
+                try {
+                    if (ThreeCompat) {
+                        const noiseTexture = ThreeCompat.createNoiseTexture(64, 64, 0.1);
+                        const gradientTexture = ThreeCompat.createGradientTexture(64, 64, [255, 0, 0], [0, 0, 255]);
+                        
+                        allTestsPassed &= addTestResult('Procedural Textures', 
+                            noiseTexture && gradientTexture, 
+                            'Noise and gradient textures created via compatibility layer',
+                            {
+                                noiseHasData: !!noiseTexture.data || !!noiseTexture.image,
+                                gradientHasData: !!gradientTexture.data || !!gradientTexture.image
+                            });
+                    }
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Procedural Textures', false, e.message);
+                }
+                
+                // Test 8: Enhanced texture properties
+                try {
+                    const texture = new THREE.Texture();
+                    const hasEnhancedProps = texture.offset && texture.center && 
+                                            typeof texture.rotation !== 'undefined' &&
+                                            typeof texture.colorSpace !== 'undefined';
+                    
+                    allTestsPassed &= addTestResult('Enhanced Properties', 
+                        hasEnhancedProps, 
+                        'Enhanced texture properties available',
+                        {
+                            hasOffset: !!texture.offset,
+                            hasCenter: !!texture.center,
+                            hasRotation: typeof texture.rotation !== 'undefined',
+                            hasColorSpace: typeof texture.colorSpace !== 'undefined',
+                            hasDispose: typeof texture.dispose === 'function',
+                            hasClone: typeof texture.clone === 'function'
+                        });
+                } catch (e) {
+                    allTestsPassed &= addTestResult('Enhanced Properties', false, e.message);
+                }
+                
+                // Update status
+                if (allTestsPassed) {
+                    statusDiv.textContent = '✅ All texture API tests passed! Enhanced implementation successful';
+                    statusDiv.className = 'status success';
+                } else {
+                    statusDiv.textContent = '❌ Some texture API tests failed. Check implementation';
+                    statusDiv.className = 'status error';
+                }
+                
+            } catch (error) {
+                statusDiv.textContent = `❌ Test suite failed: ${error.message}`;
+                statusDiv.className = 'status error';
+                addTestResult('Test Suite', false, error.message);
+            }
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTextureTests, 100); // Small delay to ensure everything is loaded
+        });
+    </script>
+</body>
+</html>

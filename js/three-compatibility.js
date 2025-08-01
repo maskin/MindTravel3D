@@ -70,11 +70,18 @@ class ThreeCompatibility {
             MeshPhongMaterial: typeof THREE.MeshPhongMaterial,
             MeshBasicMaterial: typeof THREE.MeshBasicMaterial,
             CanvasTexture: typeof THREE.CanvasTexture,
+            DataTexture: typeof THREE.DataTexture,
             TextureLoader: typeof THREE.TextureLoader,
             AmbientLight: typeof THREE.AmbientLight,
             DirectionalLight: typeof THREE.DirectionalLight,
             Mesh: typeof THREE.Mesh,
-            Vector3: typeof THREE.Vector3
+            Vector3: typeof THREE.Vector3,
+            // Texture constants
+            NearestFilter: typeof THREE.NearestFilter,
+            LinearFilter: typeof THREE.LinearFilter,
+            RGBAFormat: typeof THREE.RGBAFormat,
+            UnsignedByteType: typeof THREE.UnsignedByteType,
+            SRGBColorSpace: typeof THREE.SRGBColorSpace
         };
     }
     
@@ -289,6 +296,139 @@ class ThreeCompatibility {
         }
         
         return texture;
+    }
+    
+    /**
+     * Create compatible data texture for procedural generation
+     */
+    createDataTexture(data, width, height, format, type) {
+        if (!THREE.DataTexture) {
+            console.warn('DataTexture not available, creating fallback');
+            // Create a canvas-based fallback
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            // Convert data array to ImageData if needed
+            if (data instanceof Uint8Array || data instanceof Uint8ClampedArray) {
+                const imageData = new ImageData(data, width, height);
+                ctx.putImageData(imageData, 0, 0);
+            } else {
+                // Fill with solid color as fallback
+                ctx.fillStyle = '#888888';
+                ctx.fillRect(0, 0, width, height);
+            }
+            
+            return this.createCanvasTexture(canvas);
+        }
+        
+        const texture = new THREE.DataTexture(
+            data, 
+            width, 
+            height, 
+            format || THREE.RGBAFormat || 'rgba',
+            type || THREE.UnsignedByteType || 'unsigned-byte'
+        );
+        
+        // Configure color space
+        if (this.isOfficial && typeof THREE.SRGBColorSpace !== 'undefined') {
+            texture.colorSpace = THREE.SRGBColorSpace;
+        }
+        
+        // Set default properties for data textures
+        texture.generateMipmaps = false;
+        texture.flipY = false;
+        texture.magFilter = THREE.LinearFilter || 'linear';
+        texture.minFilter = THREE.LinearFilter || 'linear';
+        texture.wrapS = THREE.ClampToEdgeWrapping || 'clamp-to-edge';
+        texture.wrapT = THREE.ClampToEdgeWrapping || 'clamp-to-edge';
+        
+        return texture;
+    }
+    
+    /**
+     * Create compatible texture loader
+     */
+    createTextureLoader() {
+        if (!THREE.TextureLoader) {
+            console.warn('TextureLoader not available, creating minimal fallback');
+            return {
+                load: (url, onLoad, onProgress, onError) => {
+                    console.warn('TextureLoader fallback: cannot load external images');
+                    if (onError) onError(new Error('TextureLoader not available'));
+                    return new THREE.Texture();
+                },
+                setPath: function(path) { return this; }
+            };
+        }
+        
+        const loader = new THREE.TextureLoader();
+        
+        // Enhance loader with compatibility features
+        const originalLoad = loader.load.bind(loader);
+        loader.load = (url, onLoad, onProgress, onError) => {
+            const texture = originalLoad(url, (loadedTexture) => {
+                // Configure color space for loaded textures
+                if (this.isOfficial && typeof THREE.SRGBColorSpace !== 'undefined') {
+                    loadedTexture.colorSpace = THREE.SRGBColorSpace;
+                }
+                if (onLoad) onLoad(loadedTexture);
+            }, onProgress, onError);
+            
+            return texture;
+        };
+        
+        return loader;
+    }
+    
+    /**
+     * Create procedural noise texture using DataTexture
+     */
+    createNoiseTexture(width = 256, height = 256, scale = 0.1) {
+        const size = width * height;
+        const data = new Uint8Array(4 * size);
+        
+        for (let i = 0; i < size; i++) {
+            const x = i % width;
+            const y = Math.floor(i / width);
+            
+            // Simple noise generation
+            const noise = (Math.sin(x * scale) + Math.sin(y * scale)) * 0.5 + 0.5;
+            const value = Math.floor(noise * 255);
+            
+            const stride = i * 4;
+            data[stride] = value;     // R
+            data[stride + 1] = value; // G
+            data[stride + 2] = value; // B
+            data[stride + 3] = 255;   // A
+        }
+        
+        return this.createDataTexture(data, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
+    }
+    
+    /**
+     * Create gradient texture using DataTexture
+     */
+    createGradientTexture(width = 256, height = 256, colorStart = [255, 0, 0], colorEnd = [0, 0, 255]) {
+        const size = width * height;
+        const data = new Uint8Array(4 * size);
+        
+        for (let i = 0; i < size; i++) {
+            const x = i % width;
+            const y = Math.floor(i / width);
+            
+            // Horizontal gradient
+            const t = x / (width - 1);
+            
+            const stride = i * 4;
+            data[stride] = Math.floor(colorStart[0] * (1 - t) + colorEnd[0] * t);     // R
+            data[stride + 1] = Math.floor(colorStart[1] * (1 - t) + colorEnd[1] * t); // G
+            data[stride + 2] = Math.floor(colorStart[2] * (1 - t) + colorEnd[2] * t); // B
+            data[stride + 3] = 255; // A
+        }
+        
+        return this.createDataTexture(data, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
     }
     
     /**
