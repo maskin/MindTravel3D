@@ -593,21 +593,43 @@ class GameEngine {
     movePlayer(direction) {
         if (this.isMoving) return false;
         
-        let newX = this.playerPosition.x;
-        let newZ = this.playerPosition.z;
+        // Calculate discrete grid movement - exactly 1 cell at a time
+        let deltaX = 0;
+        let deltaZ = 0;
+        
+        // Convert rotation to discrete direction (0=North, 1=East, 2=South, 3=West)
+        const discreteDirection = Math.round(this.playerRotation / (Math.PI / 2)) % 4;
         
         switch (direction) {
             case 'forward':
-                newX += Math.sin(this.playerRotation) * this.moveSpeed;
-                newZ += Math.cos(this.playerRotation) * this.moveSpeed;
+                switch (discreteDirection) {
+                    case 0: deltaZ = -1; break; // North
+                    case 1: deltaX = 1; break;  // East  
+                    case 2: deltaZ = 1; break;  // South
+                    case 3: deltaX = -1; break; // West
+                }
                 break;
             case 'backward':
-                newX -= Math.sin(this.playerRotation) * this.moveSpeed;
-                newZ -= Math.cos(this.playerRotation) * this.moveSpeed;
+                switch (discreteDirection) {
+                    case 0: deltaZ = 1; break;  // North -> move South
+                    case 1: deltaX = -1; break; // East -> move West
+                    case 2: deltaZ = -1; break; // South -> move North
+                    case 3: deltaX = 1; break;  // West -> move East
+                }
                 break;
         }
         
-        // 衝突判定
+        // Calculate new grid-aligned position (always at cell centers)
+        const currentGridX = Math.floor(this.playerPosition.x);
+        const currentGridZ = Math.floor(this.playerPosition.z);
+        const newGridX = currentGridX + deltaX;
+        const newGridZ = currentGridZ + deltaZ;
+        
+        // New position will be at center of target cell
+        const newX = newGridX + 0.5;
+        const newZ = newGridZ + 0.5;
+        
+        // 衝突判定 - check if target grid cell is passable
         if (this.canMoveTo(newX, newZ)) {
             this.playerPosition.x = newX;
             this.playerPosition.z = newZ;
@@ -624,16 +646,20 @@ class GameEngine {
     rotatePlayer(direction) {
         if (this.isMoving) return;
         
+        // Discrete 90-degree rotation only
         switch (direction) {
             case 'left':
-                this.playerRotation -= this.rotationSpeed;
+                this.playerRotation -= Math.PI / 2;
                 break;
             case 'right':
-                this.playerRotation += this.rotationSpeed;
+                this.playerRotation += Math.PI / 2;
                 break;
         }
         
-        // 角度を正規化
+        // Normalize angle to discrete values: 0, π/2, π, 3π/2
+        this.playerRotation = Math.round(this.playerRotation / (Math.PI / 2)) * (Math.PI / 2);
+        
+        // Keep within 0 to 2π range
         while (this.playerRotation < 0) {
             this.playerRotation += Math.PI * 2;
         }
@@ -647,25 +673,13 @@ class GameEngine {
     canMoveTo(x, z) {
         if (!this.maze) return false;
         
-        // 四角い当たり判定
-        const margin = 0.3;
-        const positions = [
-            { x: x - margin, z: z - margin },
-            { x: x + margin, z: z - margin },
-            { x: x - margin, z: z + margin },
-            { x: x + margin, z: z + margin }
-        ];
+        // For discrete grid movement, just check if the target grid cell is passable
+        // Since player is always centered in cells (at x.5, z.5), we only need to check one cell
+        const gridX = Math.floor(x);
+        const gridZ = Math.floor(z);
         
-        for (const pos of positions) {
-            const gridX = Math.floor(pos.x);
-            const gridZ = Math.floor(pos.z);
-            
-            if (this.maze.isWall(gridX, gridZ)) {
-                return false;
-            }
-        }
-        
-        return true;
+        // Check if the target cell is a wall
+        return !this.maze.isWall(gridX, gridZ);
     }
     
     checkGoal() {
@@ -714,10 +728,12 @@ class GameEngine {
             this.renderer.render(this.scene, this.camera);
         }
         
-        // UI更新
+        // UI更新 - show grid cell position instead of exact coordinates
         if (window.uiManager) {
+            const gridX = Math.floor(this.playerPosition.x);
+            const gridZ = Math.floor(this.playerPosition.z);
             window.uiManager.updateGameInfo({
-                position: `${this.playerPosition.x.toFixed(1)}, ${this.playerPosition.z.toFixed(1)}`,
+                position: `${gridX}, ${gridZ}`,
                 direction: this.getDirectionName(),
                 fps: this.fps
             });
