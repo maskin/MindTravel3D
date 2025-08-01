@@ -51,8 +51,16 @@ class GameEngine {
                 PerspectiveCamera: typeof THREE.PerspectiveCamera,
                 WebGLRenderer: typeof THREE.WebGLRenderer,
                 Vector3: typeof THREE.Vector3,
+                Vector2: typeof THREE.Vector2,
                 Texture: typeof THREE.Texture,
-                CanvasTexture: typeof THREE.CanvasTexture
+                CanvasTexture: typeof THREE.CanvasTexture,
+                RingGeometry: typeof THREE.RingGeometry,
+                BoxGeometry: typeof THREE.BoxGeometry,
+                PlaneGeometry: typeof THREE.PlaneGeometry,
+                CylinderGeometry: typeof THREE.CylinderGeometry,
+                SphereGeometry: typeof THREE.SphereGeometry,
+                MeshBasicMaterial: typeof THREE.MeshBasicMaterial,
+                MeshPhongMaterial: typeof THREE.MeshPhongMaterial
             });
             
             // Test CanvasTexture constructor
@@ -63,8 +71,23 @@ class GameEngine {
                 testCanvas.height = 32;
                 const testTexture = new THREE.CanvasTexture(testCanvas);
                 console.log('CanvasTexture test successful:', testTexture);
+                
+                // Test Vector2 for texture repeat
+                if (testTexture.repeat && testTexture.repeat.set) {
+                    testTexture.repeat.set(1, 1);
+                    console.log('Vector2 repeat test successful');
+                }
             } catch (textureError) {
                 console.error('CanvasTexture test failed:', textureError);
+            }
+            
+            // Test RingGeometry constructor
+            try {
+                console.log('Testing RingGeometry constructor...');
+                const testRing = new THREE.RingGeometry(0.5, 1.0, 8);
+                console.log('RingGeometry test successful:', testRing);
+            } catch (ringError) {
+                console.error('RingGeometry test failed:', ringError);
             }
             
             this.initRenderer();
@@ -483,9 +506,18 @@ class GameEngine {
         this.scene.add(this.goal);
         
         // Add a glowing ring around the goal for better visibility
-        const ringGeometry = (window.ThreeCompat && window.ThreeCompat.createRingGeometry) ?
-            window.ThreeCompat.createRingGeometry(0.4, 0.6, 16) :
-            new THREE.RingGeometry(0.4, 0.6, 16);
+        let ringGeometry;
+        try {
+            ringGeometry = (window.ThreeCompat && window.ThreeCompat.createRingGeometry) ?
+                window.ThreeCompat.createRingGeometry(0.4, 0.6, 16) :
+                new THREE.RingGeometry(0.4, 0.6, 16);
+        } catch (ringError) {
+            console.warn('RingGeometry creation failed, using PlaneGeometry fallback:', ringError);
+            // Fallback to a simple plane geometry
+            ringGeometry = window.ThreeCompat ?
+                window.ThreeCompat.createPlaneGeometry(1.2, 1.2) :
+                new THREE.PlaneGeometry(1.2, 1.2);
+        }
             
         const ringMaterial = window.ThreeCompat ?
             window.ThreeCompat.createMaterial('MeshPhongMaterial', { 

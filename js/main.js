@@ -38,7 +38,15 @@ class GameManager {
             console.log('GameEngine init result:', engineInit);
             
             if (!engineInit) {
-                throw new Error('3Dエンジンの初期化に失敗しました');
+                console.error('GameEngine initialization failed, attempting retry...');
+                // Wait a bit and try again
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                const retryInit = await this.gameEngine.init();
+                console.log('GameEngine retry init result:', retryInit);
+                
+                if (!retryInit) {
+                    throw new Error('3Dエンジンの初期化に失敗しました (再試行後も失敗)');
+                }
             }
             
             // 迷路生成器初期化

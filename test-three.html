@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Three.js Test</title>
+</head>
+<body>
+    <canvas id="testCanvas" width="400" height="300" style="border: 1px solid black;"></canvas>
+    
+    <script src="three.min.js"></script>
+    <script>
+        console.log('THREE object:', typeof THREE);
+        console.log('THREE keys:', Object.keys(THREE));
+        
+        // Test all required classes
+        try {
+            const scene = new THREE.Scene();
+            console.log('✅ Scene created:', scene);
+            
+            const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            console.log('✅ Camera created:', camera);
+            
+            const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('testCanvas') });
+            console.log('✅ Renderer created:', renderer);
+            
+            // Test texture creation
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(0, 0, 64, 64);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            console.log('✅ CanvasTexture created:', texture);
+            
+            // Test geometry creation
+            const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+            console.log('✅ BoxGeometry created:', boxGeometry);
+            
+            const planeGeometry = new THREE.PlaneGeometry(1, 1);
+            console.log('✅ PlaneGeometry created:', planeGeometry);
+            
+            const ringGeometry = new THREE.RingGeometry(0.5, 1, 8);
+            console.log('✅ RingGeometry created:', ringGeometry);
+            
+            // Test materials
+            const basicMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            console.log('✅ MeshBasicMaterial created:', basicMaterial);
+            
+            const phongMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+            console.log('✅ MeshPhongMaterial created:', phongMaterial);
+            
+            // Test mesh creation
+            const cube = new THREE.Mesh(boxGeometry, basicMaterial);
+            scene.add(cube);
+            console.log('✅ Mesh created and added to scene');
+            
+            // Test render
+            renderer.setSize(400, 300);
+            camera.position.z = 5;
+            renderer.render(scene, camera);
+            console.log('✅ Render completed successfully!');
+            
+            document.body.innerHTML += '<h2>✅ All Three.js tests passed!</h2>';
+            
+        } catch (error) {
+            console.error('❌ Test failed:', error);
+            document.body.innerHTML += '<h2>❌ Test failed: ' + error.message + '</h2>';
+        }
+    </script>
+</body>
+</html>
