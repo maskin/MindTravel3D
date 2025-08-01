@@ -10,8 +10,46 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
     
-    <!-- Three.js Official CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.min.js"></script>
+    <!-- Three.js with Fallback CDNs -->
+    <script>
+        // Three.js CDN loading with fallback mechanism
+        (function() {
+            const cdnSources = [
+                'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.min.js',
+                'https://unpkg.com/three@0.170.0/build/three.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/three.js/r170/three.min.js'
+            ];
+            
+            let currentCdnIndex = 0;
+            
+            function loadThreeJS() {
+                if (currentCdnIndex >= cdnSources.length) {
+                    console.error('All Three.js CDN sources failed to load');
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = cdnSources[currentCdnIndex];
+                
+                script.onload = function() {
+                    console.log(`Three.js loaded successfully from: ${cdnSources[currentCdnIndex]}`);
+                    if (typeof THREE !== 'undefined') {
+                        console.log('THREE object available, version:', THREE.REVISION ? 'r' + THREE.REVISION : 'unknown');
+                    }
+                };
+                
+                script.onerror = function() {
+                    console.warn(`Failed to load Three.js from: ${cdnSources[currentCdnIndex]}`);
+                    currentCdnIndex++;
+                    setTimeout(loadThreeJS, 100); // Try next CDN after short delay
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            loadThreeJS();
+        })();
+    </script>
     
     <!-- Three.js Compatibility Layer -->
     <script src="js/three-compatibility.js"></script>
