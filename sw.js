@@ -1,15 +1,16 @@
 // Service Worker for 3D Maze Game PWA
 const CACHE_NAME = '3d-maze-game-v1.2';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/js/maze-generator.js',
-  '/js/game-engine.js',
-  '/js/controls.js',
-  '/js/ui-manager.js',
-  '/js/main.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
+  './',
+  './index.html',
+  './manifest.json',
+  './three.min.js',
+  './js/maze-generator.js',
+  './js/game-engine.js',
+  './js/controls.js',
+  './js/ui-manager.js',
+  './js/main.js',
+  './js/three-compatibility.js'
 ];
 
 // インストール時のキャッシュ
