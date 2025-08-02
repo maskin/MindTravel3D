@@ -110,8 +110,19 @@ class GameManager {
     
     async startGame() {
         if (!this.isInitialized) {
-            this.uiManager.showError('ゲームが初期化されていません');
-            return;
+            console.log('ゲームが初期化されていません - 再初期化を試行...');
+            // Try to re-initialize
+            try {
+                await this.init();
+                if (!this.isInitialized) {
+                    this.uiManager.showError('ゲームが初期化されていません。ページを再読み込みしてください。');
+                    return;
+                }
+            } catch (error) {
+                console.error('再初期化失敗:', error);
+                this.uiManager.showError('ゲームの初期化に失敗しました:\n' + error.message);
+                return;
+            }
         }
         
         try {
@@ -189,7 +200,7 @@ class GameManager {
     initPWA() {
         // Service Worker登録
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
+            navigator.serviceWorker.register('./sw.js')
                 .then(registration => {
                     console.log('Service Worker 登録成功:', registration);
                 })
