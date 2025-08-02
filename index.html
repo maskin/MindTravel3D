@@ -282,6 +282,77 @@
             line-height: 1.6;
         }
         
+        #debugPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            border: 2px solid #333;
+            max-width: 300px;
+        }
+        
+        #debugControls h3 {
+            margin: 0 0 15px 0;
+            color: #4ecdc4;
+            text-align: center;
+        }
+        
+        .debug-section {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .debug-section:last-child {
+            border-bottom: none;
+        }
+        
+        .debug-section h4 {
+            margin: 0 0 8px 0;
+            color: #ccc;
+            font-size: 14px;
+        }
+        
+        .debug-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            padding: 8px 12px;
+            margin: 3px;
+            font-size: 12px;
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
+        
+        .debug-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        #verificationResults {
+            margin-top: 10px;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .test-result {
+            padding: 3px 0;
+            border-bottom: 1px solid #222;
+        }
+        
+        .test-result.pass { color: #4ecdc4; }
+        .test-result.warning { color: #ffc107; }
+        .test-result.fail { color: #ff6b6b; }
+        
         @media (max-width: 768px) {
             #mobileControls {
                 display: block;
@@ -296,6 +367,13 @@
                 left: 10px;
                 padding: 10px;
                 font-size: 12px;
+            }
+            
+            #debugPanel {
+                top: 10px;
+                right: 10px;
+                max-width: 250px;
+                font-size: 11px;
             }
         }
     </style>
@@ -313,6 +391,28 @@
             </div>
         </div>
         
+        <div id="debugPanel" style="display: none;">
+            <div id="debugControls">
+                <h3>🔧 デバッグ・検証パネル</h3>
+                <div class="debug-section">
+                    <h4>表示モード</h4>
+                    <button class="debug-btn" onclick="toggleWireframe()">ワイヤーフレーム切替</button>
+                </div>
+                <div class="debug-section">
+                    <h4>エラーシミュレーション</h4>
+                    <button class="debug-btn" onclick="simulateError('rendering')">レンダリングエラー</button>
+                    <button class="debug-btn" onclick="simulateError('texture')">テクスチャエラー</button>
+                    <button class="debug-btn" onclick="simulateError('lighting')">ライティングエラー</button>
+                    <button class="debug-btn" onclick="simulateError('geometry')">ジオメトリエラー</button>
+                </div>
+                <div class="debug-section">
+                    <h4>検証スキーム</h4>
+                    <button class="debug-btn" onclick="runVerification()">システム検証実行</button>
+                    <div id="verificationResults"></div>
+                </div>
+            </div>
+        </div>
+        
         <div id="startMenu">
             <h1 class="menu-title">🎮 3D迷路ゲーム</h1>
             <button class="menu-button" onclick="startGame()">ゲームスタート</button>
@@ -323,8 +423,9 @@
                 ↑/W: 前進 | ↓/S: 後退<br>
                 ←/A: 左回転 | →/D: 右回転<br>
                 マウス: 視点操作 | R: 新迷路<br>
-                Esc: メニュー
+                Esc: メニュー | Ctrl+D: デバッグパネル
             </div>
+            <button class="menu-button" onclick="toggleDebugPanel()" style="margin-top: 20px; background: linear-gradient(45deg, #ff6b6b, #ee5a24);">🔧 デバッグ・検証パネル</button>
         </div>
         
         <div id="mobileControls">
@@ -344,6 +445,77 @@
             </div>
         </div>
     </div>
+
+    <!-- Debug and Verification Functions -->
+    <script>
+        // デバッグパネルの表示切替
+        function toggleDebugPanel() {
+            const panel = document.getElementById('debugPanel');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+        
+        // ワイヤーフレームモード切替
+        function toggleWireframe() {
+            if (window.gameManager && window.gameManager.gameEngine) {
+                const isWireframe = window.gameManager.gameEngine.toggleWireframeMode();
+                console.log('ワイヤーフレームモード:', isWireframe ? 'ON' : 'OFF');
+            } else {
+                console.warn('ゲームエンジンが初期化されていません');
+            }
+        }
+        
+        // エラーシミュレーション
+        function simulateError(errorType) {
+            if (window.gameManager && window.gameManager.gameEngine) {
+                window.gameManager.gameEngine.simulateError(errorType);
+                console.log(`${errorType} エラーをシミュレートしました`);
+            } else {
+                console.warn('ゲームエンジンが初期化されていません');
+            }
+        }
+        
+        // 検証スキーム実行
+        function runVerification() {
+            if (window.gameManager && window.gameManager.gameEngine) {
+                const results = window.gameManager.gameEngine.runVerificationScheme();
+                displayVerificationResults(results);
+            } else {
+                console.warn('ゲームエンジンが初期化されていません');
+            }
+        }
+        
+        // 検証結果表示
+        function displayVerificationResults(results) {
+            const container = document.getElementById('verificationResults');
+            if (!container) return;
+            
+            let html = `<div style="font-weight: bold; margin-bottom: 5px;">検証結果 (${results.timestamp})</div>`;
+            
+            results.tests.forEach(test => {
+                const statusClass = test.status.toLowerCase();
+                html += `
+                    <div class="test-result ${statusClass}">
+                        <strong>${test.name}:</strong> ${test.status}<br>
+                        <small>${test.details}</small>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // キーボードショートカット (Ctrl+D でデバッグパネル表示)
+        document.addEventListener('keydown', (event) => {
+            if (event.ctrlKey && event.key === 'd') {
+                event.preventDefault();
+                toggleDebugPanel();
+            }
+        });
+    </script>
 
     <!-- Game Scripts will be loaded dynamically after Three.js is ready -->
 </body>

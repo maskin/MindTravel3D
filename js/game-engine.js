@@ -22,6 +22,10 @@ class GameEngine {
         this.isMoving = false;
         this.gameWon = false;
         
+        // ワイヤーフレームモード
+        this.wireframeMode = false;
+        this.originalMaterials = new Map();
+        
         // パフォーマンス監視
         this.fps = 0;
         this.frameCount = 0;
@@ -800,6 +804,158 @@ class GameEngine {
         this.gameWon = false;
         // Don't reset position here - it should be set by caller with proper centering
         this.updateCameraPosition();
+    }
+    
+    // ワイヤーフレームモードの切り替え
+    toggleWireframeMode() {
+        this.wireframeMode = !this.wireframeMode;
+        console.log('ワイヤーフレームモード:', this.wireframeMode ? 'ON' : 'OFF');
+        
+        this.scene.traverse((object) => {
+            if (object.isMesh && object.material) {
+                if (this.wireframeMode) {
+                    // 元のマテリアルを保存
+                    if (!this.originalMaterials.has(object.uuid)) {
+                        this.originalMaterials.set(object.uuid, object.material.clone());
+                    }
+                    // ワイヤーフレームモードに設定
+                    object.material.wireframe = true;
+                    object.material.color.setHex(0x00ff00);
+                } else {
+                    // 元のマテリアルに戻す
+                    const originalMaterial = this.originalMaterials.get(object.uuid);
+                    if (originalMaterial) {
+                        object.material.wireframe = false;
+                        object.material.color.copy(originalMaterial.color);
+                        object.material.map = originalMaterial.map;
+                    }
+                }
+            }
+        });
+        
+        return this.wireframeMode;
+    }
+    
+    // エラー状態シミュレーション
+    simulateError(errorType) {
+        console.log('エラーシミュレーション開始:', errorType);
+        
+        switch (errorType) {
+            case 'rendering':
+                // レンダリングエラーをシミュレート
+                const originalClearColor = this.renderer.getClearColor().getHex();
+                this.renderer.setClearColor(0xff0000); // 赤背景でエラー表示
+                setTimeout(() => {
+                    this.renderer.setClearColor(originalClearColor);
+                }, 2000);
+                break;
+                
+            case 'texture':
+                // テクスチャエラーをシミュレート
+                this.scene.traverse((object) => {
+                    if (object.isMesh && object.material && object.material.map) {
+                        const errorCanvas = document.createElement('canvas');
+                        errorCanvas.width = 64;
+                        errorCanvas.height = 64;
+                        const ctx = errorCanvas.getContext('2d');
+                        ctx.fillStyle = '#ff0000';
+                        ctx.fillRect(0, 0, 64, 64);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = '10px Arial';
+                        ctx.fillText('ERROR', 10, 35);
+                        
+                        const errorTexture = new THREE.CanvasTexture(errorCanvas);
+                        object.material.map = errorTexture;
+                        object.material.needsUpdate = true;
+                    }
+                });
+                break;
+                
+            case 'lighting':
+                // ライティングエラーをシミュレート
+                this.scene.traverse((object) => {
+                    if (object.isLight) {
+                        object.visible = false;
+                    }
+                });
+                setTimeout(() => {
+                    this.scene.traverse((object) => {
+                        if (object.isLight) {
+                            object.visible = true;
+                        }
+                    });
+                }, 3000);
+                break;
+                
+            case 'geometry':
+                // ジオメトリエラーをシミュレート
+                this.scene.traverse((object) => {
+                    if (object.isMesh) {
+                        object.scale.set(
+                            0.5 + Math.random() * 1.5,
+                            0.5 + Math.random() * 1.5,
+                            0.5 + Math.random() * 1.5
+                        );
+                    }
+                });
+                break;
+                
+            default:
+                console.warn('未知のエラータイプ:', errorType);
+        }
+    }
+    
+    // 検証スキーム実行
+    runVerificationScheme() {
+        console.log('検証スキーム実行開始...');
+        const results = {
+            timestamp: new Date().toISOString(),
+            tests: []
+        };
+        
+        // 基本レンダリング検証
+        results.tests.push({
+            name: 'レンダリング検証',
+            status: this.renderer && this.scene && this.camera ? 'PASS' : 'FAIL',
+            details: `レンダラー: ${!!this.renderer}, シーン: ${!!this.scene}, カメラ: ${!!this.camera}`
+        });
+        
+        // シーンオブジェクト数検証
+        let meshCount = 0;
+        let lightCount = 0;
+        this.scene.traverse((object) => {
+            if (object.isMesh) meshCount++;
+            if (object.isLight) lightCount++;
+        });
+        
+        results.tests.push({
+            name: 'シーンオブジェクト検証',
+            status: meshCount > 0 && lightCount > 0 ? 'PASS' : 'FAIL',
+            details: `メッシュ数: ${meshCount}, ライト数: ${lightCount}`
+        });
+        
+        // メモリ使用量検証
+        const memoryInfo = performance.memory ? {
+            used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
+            total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024),
+            limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024)
+        } : null;
+        
+        results.tests.push({
+            name: 'メモリ使用量検証',
+            status: memoryInfo && memoryInfo.used < memoryInfo.limit * 0.8 ? 'PASS' : 'WARNING',
+            details: memoryInfo ? `使用量: ${memoryInfo.used}MB / ${memoryInfo.limit}MB` : 'メモリ情報なし'
+        });
+        
+        // FPS検証
+        results.tests.push({
+            name: 'パフォーマンス検証',
+            status: this.fps > 30 ? 'PASS' : this.fps > 15 ? 'WARNING' : 'FAIL',
+            details: `FPS: ${this.fps}`
+        });
+        
+        console.log('検証結果:', results);
+        return results;
     }
 }
 

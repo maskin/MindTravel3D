@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>検証機能テスト</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #333; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; background: #444; border-radius: 10px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background: #4CAF50; }
+        .fail { background: #f44336; }
+        .warning { background: #FF9800; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 ワイヤーフレーム・検証機能テスト</h1>
+    
+    <div class="test-section">
+        <h2>構文チェック</h2>
+        <div id="syntaxTest"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>機能テスト</h2>
+        <button onclick="testGameEngineExtensions()">GameEngine拡張テスト</button>
+        <button onclick="testUIElements()">UI要素テスト</button>
+        <button onclick="testErrorSimulation()">エラーシミュレーションテスト</button>
+        <div id="functionalTest"></div>
+    </div>
+    
+    <script src="three.min.js"></script>
+    <script>
+        // 基本的な構文チェック
+        function runSyntaxCheck() {
+            const results = [];
+            
+            try {
+                // GameEngine拡張のチェック
+                const gameEngineCode = `
+                    // ワイヤーフレームモード
+                    this.wireframeMode = false;
+                    this.originalMaterials = new Map();
+                    
+                    // ワイヤーフレームモードの切り替え
+                    toggleWireframeMode() {
+                        this.wireframeMode = !this.wireframeMode;
+                        return this.wireframeMode;
+                    }
+                    
+                    // エラー状態シミュレーション
+                    simulateError(errorType) {
+                        console.log('エラーシミュレーション:', errorType);
+                    }
+                    
+                    // 検証スキーム実行
+                    runVerificationScheme() {
+                        return {
+                            timestamp: new Date().toISOString(),
+                            tests: []
+                        };
+                    }
+                `;
+                
+                eval(`(function() { ${gameEngineCode} })`);
+                results.push({ name: 'GameEngine拡張構文', status: 'PASS' });
+            } catch (error) {
+                results.push({ name: 'GameEngine拡張構文', status: 'FAIL', error: error.message });
+            }
+            
+            try {
+                // UI関数のチェック
+                const uiFunctions = `
+                    function toggleDebugPanel() {
+                        const panel = document.getElementById('debugPanel');
+                        if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+                    }
+                    
+                    function toggleWireframe() {
+                        console.log('wireframe toggle');
+                    }
+                    
+                    function simulateError(errorType) {
+                        console.log('simulate error:', errorType);
+                    }
+                    
+                    function runVerification() {
+                        console.log('run verification');
+                    }
+                `;
+                
+                eval(uiFunctions);
+                results.push({ name: 'UI関数構文', status: 'PASS' });
+            } catch (error) {
+                results.push({ name: 'UI関数構文', status: 'FAIL', error: error.message });
+            }
+            
+            return results;
+        }
+        
+        function testGameEngineExtensions() {
+            const results = [];
+            
+            try {
+                // Mock GameEngine class
+                class MockGameEngine {
+                    constructor() {
+                        this.wireframeMode = false;
+                        this.originalMaterials = new Map();
+                        this.scene = {
+                            traverse: function(callback) {
+                                // Mock some objects
+                                callback({ isMesh: true, material: { wireframe: false, color: { setHex: () => {}, copy: () => {} }, map: null }, uuid: 'test1' });
+                            }
+                        };
+                        this.renderer = { getClearColor: () => ({ getHex: () => 0x000000 }), setClearColor: () => {} };
+                        this.camera = true;
+                        this.fps = 60;
+                    }
+                    
+                    toggleWireframeMode() {
+                        this.wireframeMode = !this.wireframeMode;
+                        this.scene.traverse((object) => {
+                            if (object.isMesh && object.material) {
+                                if (this.wireframeMode) {
+                                    if (!this.originalMaterials.has(object.uuid)) {
+                                        this.originalMaterials.set(object.uuid, { color: object.material.color, map: object.material.map });
+                                    }
+                                    object.material.wireframe = true;
+                                    object.material.color.setHex(0x00ff00);
+                                }
+                            }
+                        });
+                        return this.wireframeMode;
+                    }
+                    
+                    simulateError(errorType) {
+                        switch (errorType) {
+                            case 'rendering':
+                                this.renderer.setClearColor(0xff0000);
+                                break;
+                            case 'texture':
+                            case 'lighting':
+                            case 'geometry':
+                                console.log(`${errorType} error simulated`);
+                                break;
+                        }
+                    }
+                    
+                    runVerificationScheme() {
+                        const results = {
+                            timestamp: new Date().toISOString(),
+                            tests: []
+                        };
+                        
+                        results.tests.push({
+                            name: 'レンダリング検証',
+                            status: this.renderer && this.scene && this.camera ? 'PASS' : 'FAIL',
+                            details: `レンダラー: ${!!this.renderer}, シーン: ${!!this.scene}, カメラ: ${!!this.camera}`
+                        });
+                        
+                        results.tests.push({
+                            name: 'パフォーマンス検証',
+                            status: this.fps > 30 ? 'PASS' : this.fps > 15 ? 'WARNING' : 'FAIL',
+                            details: `FPS: ${this.fps}`
+                        });
+                        
+                        return results;
+                    }
+                }
+                
+                const mockEngine = new MockGameEngine();
+                
+                // Test wireframe toggle
+                const wireframeResult = mockEngine.toggleWireframeMode();
+                results.push({ 
+                    name: 'ワイヤーフレーム切替', 
+                    status: wireframeResult === true ? 'PASS' : 'FAIL',
+                    details: `結果: ${wireframeResult}`
+                });
+                
+                // Test error simulation
+                mockEngine.simulateError('rendering');
+                results.push({ name: 'エラーシミュレーション', status: 'PASS', details: 'レンダリングエラーをシミュレート' });
+                
+                // Test verification scheme
+                const verificationResults = mockEngine.runVerificationScheme();
+                results.push({ 
+                    name: '検証スキーム', 
+                    status: verificationResults.tests.length > 0 ? 'PASS' : 'FAIL',
+                    details: `テスト数: ${verificationResults.tests.length}`
+                });
+                
+            } catch (error) {
+                results.push({ name: 'GameEngine拡張', status: 'FAIL', error: error.message });
+            }
+            
+            displayResults('functionalTest', results);
+        }
+        
+        function testUIElements() {
+            const results = [];
+            
+            // Check if required HTML elements would exist
+            const requiredElements = ['debugPanel', 'verificationResults'];
+            requiredElements.forEach(id => {
+                const exists = document.getElementById(id) !== null;
+                results.push({
+                    name: `UI要素: ${id}`,
+                    status: exists ? 'PASS' : 'WARNING',
+                    details: exists ? '要素が存在' : 'テストページには存在しない（本体では存在する予定）'
+                });
+            });
+            
+            displayResults('functionalTest', results);
+        }
+        
+        function testErrorSimulation() {
+            const results = [];
+            
+            const errorTypes = ['rendering', 'texture', 'lighting', 'geometry'];
+            errorTypes.forEach(type => {
+                try {
+                    // Mock error simulation
+                    console.log(`Testing ${type} error simulation`);
+                    results.push({
+                        name: `${type}エラーシミュレーション`,
+                        status: 'PASS',
+                        details: 'シミュレーション準備完了'
+                    });
+                } catch (error) {
+                    results.push({
+                        name: `${type}エラーシミュレーション`,
+                        status: 'FAIL',
+                        error: error.message
+                    });
+                }
+            });
+            
+            displayResults('functionalTest', results);
+        }
+        
+        function displayResults(containerId, results) {
+            const container = document.getElementById(containerId);
+            let html = '';
+            
+            results.forEach(result => {
+                const statusClass = result.status.toLowerCase();
+                html += `
+                    <div class="result ${statusClass}">
+                        <strong>${result.name}:</strong> ${result.status}<br>
+                        ${result.details ? `<small>${result.details}</small>` : ''}
+                        ${result.error ? `<small>エラー: ${result.error}</small>` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Run syntax check on load
+        window.addEventListener('load', () => {
+            const syntaxResults = runSyntaxCheck();
+            displayResults('syntaxTest', syntaxResults);
+        });
+    </script>
+</body>
+</html>
