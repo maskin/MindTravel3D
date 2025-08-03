@@ -9,7 +9,7 @@ class GameManager {
     }
     
     async init() {
-        console.log('ゲーム管理システム初期化開始...');
+        console.log('🎮 ゲーム管理システム初期化開始...');
         console.log('Environment check:', {
             window: typeof window,
             document: typeof document,
@@ -21,24 +21,27 @@ class GameManager {
         });
         
         try {
-            // エラーハンドリング設定
+            // Step 1: エラーハンドリング設定
+            console.log('📋 初期化 Step 1: エラーハンドリング設定...');
             this.setupErrorHandling();
+            console.log('✅ Step 1 完了: エラーハンドリング設定済み');
             
-            // UIマネージャー初期化
-            console.log('UIManager initialization...');
+            // Step 2: UIマネージャー初期化
+            console.log('📋 初期化 Step 2: UIManager初期化...');
             this.uiManager = new UIManager();
             window.uiManager = this.uiManager;
-            console.log('UIManager initialized successfully');
+            console.log('✅ Step 2 完了: UIManager初期化済み');
             
-            // 3Dエンジン初期化
-            console.log('GameEngine initialization...');
+            // Step 3: 3Dエンジン初期化
+            console.log('📋 初期化 Step 3: GameEngine初期化...');
             this.gameEngine = new GameEngine();
             console.log('GameEngine object created, calling init...');
+            
             const engineInit = await this.gameEngine.init();
             console.log('GameEngine init result:', engineInit);
             
             if (!engineInit) {
-                console.error('GameEngine initialization failed, attempting retry...');
+                console.warn('⚠️ GameEngine初期化失敗、再試行します...');
                 // Wait a bit and try again
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 const retryInit = await this.gameEngine.init();
@@ -48,31 +51,41 @@ class GameManager {
                     throw new Error('3Dエンジンの初期化に失敗しました (再試行後も失敗)');
                 }
             }
+            console.log('✅ Step 3 完了: GameEngine初期化済み');
             
-            // 迷路生成器初期化
-            console.log('MazeGenerator initialization...');
+            // Step 4: 迷路生成器初期化
+            console.log('📋 初期化 Step 4: MazeGenerator初期化...');
             this.mazeGenerator = new MazeGenerator(50, 50);
-            console.log('MazeGenerator initialized successfully');
+            console.log('✅ Step 4 完了: MazeGenerator初期化済み');
             
-            // 操作システム初期化
-            console.log('Controls initialization...');
+            // Step 5: 操作システム初期化
+            console.log('📋 初期化 Step 5: Controls初期化...');
             this.controls = new Controls(this.gameEngine);
-            console.log('Controls initialized successfully');
+            console.log('✅ Step 5 完了: Controls初期化済み');
             
-            // PWA設定
+            // Step 6: PWA設定
+            console.log('📋 初期化 Step 6: PWA設定...');
             this.initPWA();
+            console.log('✅ Step 6 完了: PWA設定済み');
             
-            // アニメーション開始
+            // Step 7: アニメーション開始
+            console.log('📋 初期化 Step 7: アニメーション開始...');
             this.gameEngine.animate();
+            console.log('✅ Step 7 完了: アニメーション開始済み');
             
+            // 初期化完了フラグ設定
             this.isInitialized = true;
-            console.log('ゲーム管理システム初期化完了');
+            console.log('🎉 ゲーム管理システム初期化完了！');
             
-            // スタートメニュー表示
+            // Step 8: スタートメニュー表示
+            console.log('📋 初期化 Step 8: スタートメニュー表示...');
             this.uiManager.showStartMenu();
+            console.log('✅ Step 8 完了: スタートメニュー表示済み');
+            
+            console.log('🎮 すべての初期化プロセス完了 - ゲーム準備完了！');
             
         } catch (error) {
-            console.error('初期化エラー - 詳細情報:', {
+            console.error('❌ 初期化エラー - 詳細情報:', {
                 error: error,
                 message: error.message,
                 stack: error.stack,
@@ -80,14 +93,64 @@ class GameManager {
                 uiManagerState: this.uiManager ? 'created' : 'null'
             });
             
-            // Make sure we have UIManager before showing error
-            if (this.uiManager) {
-                this.uiManager.showError('ゲームの初期化に失敗しました:\n' + error.message);
-            } else {
-                // Fallback error display
-                alert('ゲームの初期化に失敗しました:\n' + error.message);
+            // 緊急時用の部分初期化を試行
+            console.log('🚨 緊急時用の部分初期化を試行...');
+            try {
+                await this.emergencyInit();
+            } catch (emergencyError) {
+                console.error('❌ 緊急初期化も失敗:', emergencyError);
+                
+                // Make sure we have UIManager before showing error
+                if (this.uiManager) {
+                    this.uiManager.showError('ゲームの初期化に失敗しました:\n' + error.message + '\n\n緊急モードも利用できません。');
+                } else {
+                    // Fallback error display
+                    alert('ゲームの初期化に失敗しました:\n' + error.message);
+                }
             }
         }
+    }
+    
+    async emergencyInit() {
+        console.log('🚨 緊急初期化モード開始...');
+        
+        // 最低限のUIManager確保
+        if (!this.uiManager) {
+            console.log('🔧 UIManager緊急作成...');
+            this.uiManager = new UIManager();
+            window.uiManager = this.uiManager;
+        }
+        
+        // 最低限のゲームエンジン確保
+        if (!this.gameEngine || !this.gameEngine.renderer) {
+            console.log('🔧 簡易ゲームエンジン作成試行...');
+            try {
+                this.gameEngine = new GameEngine();
+                // 簡易初期化を試行
+                const simpleInit = await this.gameEngine.simpleInit();
+                if (!simpleInit) {
+                    throw new Error('簡易初期化失敗');
+                }
+            } catch (e) {
+                console.warn('⚠️ 3Dエンジン初期化失敗、2Dフォールバックモード');
+                this.gameEngine = null;
+            }
+        }
+        
+        // 基本的なコンポーネント
+        if (!this.mazeGenerator) {
+            this.mazeGenerator = new MazeGenerator(25, 25); // より小さなサイズ
+        }
+        
+        // 部分的に初期化完了
+        this.isInitialized = true;
+        console.log('🆘 緊急初期化完了 - 制限付きモード');
+        
+        // エラーメッセージと再試行オプション表示
+        this.uiManager.showError('初期化で問題が発生しましたが、制限付きモードで動作します。\n\nページを再読み込みして完全初期化を再試行することをお勧めします。', {
+            showReload: true,
+            showContinue: true
+        });
     }
     
     setupErrorHandling() {

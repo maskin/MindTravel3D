@@ -33,7 +33,7 @@ class GameEngine {
     }
     
     async init() {
-        console.log('3Dエンジン初期化開始...');
+        console.log('🚀 3Dエンジン初期化開始...');
         console.log('Browser info:', {
             userAgent: navigator.userAgent,
             platform: navigator.platform,
@@ -42,12 +42,13 @@ class GameEngine {
         });
         
         try {
-            // Three.jsの確認
-            console.log('THREE availability check:', typeof THREE);
+            // Step 1: Three.jsの確認
+            console.log('📋 Step 1: THREE availability check:', typeof THREE);
             if (typeof THREE === 'undefined') {
-                console.error('THREE is undefined - script loading failed');
+                console.error('❌ THREE is undefined - script loading failed');
                 throw new Error('Three.js が読み込まれていません');
             }
+            console.log('✅ Step 1 完了: Three.js 読み込み確認済み');
             
             console.log('THREE object keys:', Object.keys(THREE));
             console.log('Required THREE components available:', {
@@ -94,12 +95,27 @@ class GameEngine {
                 console.error('RingGeometry test failed:', ringError);
             }
             
+            // Step 2: レンダラー初期化
+            console.log('📋 Step 2: レンダラー初期化開始...');
             this.initRenderer();
-            this.initScene();
-            this.initCamera();
-            this.initLights();
+            console.log('✅ Step 2 完了: レンダラー初期化済み');
             
-            console.log('3Dエンジン初期化完了');
+            // Step 3: シーン初期化
+            console.log('📋 Step 3: シーン初期化開始...');
+            this.initScene();
+            console.log('✅ Step 3 完了: シーン初期化済み');
+            
+            // Step 4: カメラ初期化
+            console.log('📋 Step 4: カメラ初期化開始...');
+            this.initCamera();
+            console.log('✅ Step 4 完了: カメラ初期化済み');
+            
+            // Step 5: ライト初期化
+            console.log('📋 Step 5: ライト初期化開始...');
+            this.initLights();
+            console.log('✅ Step 5 完了: ライト初期化済み');
+            
+            console.log('🎉 3Dエンジン初期化完了！');
             return true;
         } catch (error) {
             console.error('3Dエンジン初期化エラー - 詳細情報:', {
@@ -109,6 +125,39 @@ class GameEngine {
                 THREEDefined: typeof THREE,
                 canvasExists: !!document.getElementById('gameCanvas')
             });
+            return false;
+        }
+    }
+    
+    async simpleInit() {
+        console.log('🚨 GameEngine 簡易初期化モード...');
+        try {
+            // 必要最低限の初期化
+            if (typeof THREE === 'undefined') {
+                console.warn('⚠️ THREE未定義、簡易初期化スキップ');
+                return false;
+            }
+            
+            // 基本的なレンダラーのみ作成
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas && THREE.WebGLRenderer) {
+                try {
+                    this.renderer = new THREE.WebGLRenderer({ 
+                        canvas: canvas,
+                        antialias: false,
+                        alpha: true
+                    });
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                    console.log('✅ 簡易レンダラー作成成功');
+                    return true;
+                } catch (rendererError) {
+                    console.warn('⚠️ 簡易レンダラー作成失敗:', rendererError.message);
+                    return false;
+                }
+            }
+            return false;
+        } catch (error) {
+            console.error('❌ 簡易初期化エラー:', error);
             return false;
         }
     }
