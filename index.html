@@ -10,21 +10,91 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
     
-    <!-- Three.js Local Loading -->
-    <script src="three.min.js"></script>
-    
+    <!-- Three.js Local Loading with Error Handling -->
     <script>
-        // Load dependent scripts after Three.js is ready
+        // Three.js ローダー with フォールバック機能
         (function() {
-            const dependentScripts = [
-                'js/three-compatibility.js',
-                'js/maze-generator.js?v=2025-08-01-upgraded',
-                'js/game-engine.js?v=2025-08-01-upgraded',
-                'js/controls.js?v=2025-08-01-upgraded',
-                'js/ui-manager.js?v=2025-08-01-upgraded',
-                'js/main.js?v=2025-08-01-upgraded'
-            ];
+            let threeJsLoaded = false;
             
+            function loadThreeJs() {
+                return new Promise((resolve, reject) => {
+                    // ローカルThree.jsを試行
+                    const localScript = document.createElement('script');
+                    localScript.src = 'three.min.js';
+                    localScript.onload = () => {
+                        console.log('✅ ローカルThree.js読み込み成功');
+                        if (typeof THREE !== 'undefined') {
+                            // WebGLRendererが正常に動作するかテスト
+                            try {
+                                const testCanvas = document.createElement('canvas');
+                                const testRenderer = new THREE.WebGLRenderer({ canvas: testCanvas });
+                                console.log('✅ WebGLRenderer テスト成功');
+                                threeJsLoaded = true;
+                                resolve('local');
+                            } catch (rendererError) {
+                                console.warn('⚠️ ローカルThree.js WebGLRenderer エラー:', rendererError.message);
+                                reject('renderer_failed');
+                            }
+                        } else {
+                            console.warn('⚠️ ローカルThree.jsファイルが空または破損');
+                            reject('empty_local');
+                        }
+                    };
+                    localScript.onerror = () => {
+                        console.warn('⚠️ ローカルThree.js読み込み失敗、CDNフォールバックを試行');
+                        reject('local_failed');
+                    };
+                    document.head.appendChild(localScript);
+                });
+            }
+            
+            async function loadThreeJsWithFallback() {
+                try {
+                    await loadThreeJs();
+                    return 'local';
+                } catch (error) {
+                    console.log('CDNからThree.jsを読み込み中...');
+                    
+                    const cdnSources = [
+                        'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.min.js',
+                        'https://unpkg.com/three@0.170.0/build/three.min.js',
+                        'https://cdnjs.cloudflare.com/ajax/libs/three.js/r170/three.min.js'
+                    ];
+                    
+                    for (const cdn of cdnSources) {
+                        try {
+                            await new Promise((resolve, reject) => {
+                                const script = document.createElement('script');
+                                script.src = cdn;
+                                script.onload = resolve;
+                                script.onerror = reject;
+                                document.head.appendChild(script);
+                            });
+                            
+                            if (typeof THREE !== 'undefined') {
+                                console.log('✅ CDNからThree.js読み込み成功:', cdn);
+                                threeJsLoaded = true;
+                                return 'cdn';
+                            }
+                        } catch (cdnError) {
+                            console.warn(`❌ CDN失敗: ${cdn}`);
+                        }
+                    }
+                    
+                    throw new Error('全てのThree.js読み込み方法が失敗しました');
+                }
+            }
+            
+            // Three.js読み込み後に依存スクリプトをロード
+            loadThreeJsWithFallback().then(source => {
+                console.log(`Three.js読み込み完了 (${source}):`, typeof THREE);
+                loadDependentScripts();
+            }).catch(error => {
+                console.error('❌ Three.js読み込み完全失敗:', error);
+                alert('Three.jsの読み込みに失敗しました。ネットワーク接続を確認してページを再読み込みしてください。');
+            });
+            
+            // 依存スクリプトローダー
             function loadScript(src) {
                 return new Promise((resolve, reject) => {
                     const script = document.createElement('script');
@@ -36,36 +106,23 @@
             }
             
             async function loadDependentScripts() {
-                console.log('Three.js check:', typeof THREE);
-                
+                // Three.jsが正常に読み込まれていることを確認
                 if (typeof THREE === 'undefined') {
-                    console.error('THREE is not defined - trying CDN fallback');
-                    // Try CDN fallback
-                    const cdnSources = [
-                        'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.min.js',
-                        'https://unpkg.com/three@0.170.0/build/three.min.js',
-                        'https://cdnjs.cloudflare.com/ajax/libs/three.js/r170/three.min.js'
-                    ];
-                    
-                    for (const cdn of cdnSources) {
-                        try {
-                            await loadScript(cdn);
-                            if (typeof THREE !== 'undefined') {
-                                console.log('Three.js loaded from CDN:', cdn);
-                                break;
-                            }
-                        } catch (error) {
-                            console.warn('CDN failed:', cdn);
-                        }
-                    }
-                    
-                    if (typeof THREE === 'undefined') {
-                        alert('Three.jsの読み込みに失敗しました。ネットワーク接続を確認してページを再読み込みしてください。');
-                        return;
-                    }
+                    console.error('❌ 依存スクリプト読み込み時点でTHREEが未定義');
+                    alert('Three.jsの読み込みに失敗しました。ページを再読み込みしてください。');
+                    return;
                 }
                 
-                console.log('Loading dependent scripts sequentially...');
+                const dependentScripts = [
+                    'js/three-compatibility.js',
+                    'js/maze-generator.js?v=2025-08-01-upgraded',
+                    'js/game-engine.js?v=2025-08-01-upgraded',
+                    'js/controls.js?v=2025-08-01-upgraded',
+                    'js/ui-manager.js?v=2025-08-01-upgraded',
+                    'js/main.js?v=2025-08-01-upgraded'
+                ];
+                
+                console.log('✅ Three.js確認完了、依存スクリプト読み込み開始...');
                 for (const scriptSrc of dependentScripts) {
                     try {
                         await loadScript(scriptSrc);

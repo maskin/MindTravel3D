@@ -133,12 +133,26 @@ class GameEngine {
         
         try {
             console.log('Creating THREE.WebGLRenderer...');
-            this.renderer = new THREE.WebGLRenderer({ 
+            console.log('THREE.WebGLRenderer function check:', typeof THREE.WebGLRenderer);
+            
+            // WebGLRendererの事前チェック
+            if (typeof THREE.WebGLRenderer !== 'function') {
+                throw new Error('THREE.WebGLRenderer は関数ではありません');
+            }
+            
+            // レンダラー作成パラメータ
+            const rendererParams = { 
                 canvas: canvas,
                 antialias: true,
-                alpha: false
-            });
-            console.log('THREE.WebGLRenderer created successfully:', this.renderer);
+                alpha: false,
+                powerPreference: 'default',
+                failIfMajorPerformanceCaveat: false
+            };
+            
+            console.log('Renderer parameters:', rendererParams);
+            
+            this.renderer = new THREE.WebGLRenderer(rendererParams);
+            console.log('✅ THREE.WebGLRenderer created successfully:', this.renderer);
             
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
