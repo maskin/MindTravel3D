@@ -210,18 +210,25 @@ class GameEngine {
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             this.renderer.fog = true;
             
-            // Test canvas immediately
-            console.log('Testing canvas rendering...');
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.fillStyle = '#00ff00';
-                ctx.fillRect(50, 50, 100, 100);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '20px Arial';
-                ctx.fillText('CANVAS TEST', 60, 110);
-                console.log('Canvas test completed - green square and text drawn');
-            } else {
-                console.warn('Could not get 2D context for canvas test');
+            // WebGLRenderer動作テスト
+            console.log('🧪 WebGLRenderer動作テスト...');
+            try {
+                // 簡単なクリアテスト
+                this.renderer.clear();
+                console.log('✅ WebGLRenderer clear test successful');
+                
+                // レンダラー情報確認
+                const gl = this.renderer.getContext();
+                if (gl) {
+                    console.log('✅ WebGL context available:', {
+                        version: gl.getParameter(gl.VERSION),
+                        vendor: gl.getParameter(gl.VENDOR),
+                        renderer: gl.getParameter(gl.RENDERER)
+                    });
+                }
+            } catch (testError) {
+                console.warn('⚠️ WebGLRenderer test warning:', testError.message);
+                // WebGLテストエラーは致命的ではないので継続
             }
         } catch (error) {
             console.error('Error in initRenderer:', {
