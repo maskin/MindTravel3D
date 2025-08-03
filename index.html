@@ -113,17 +113,29 @@
             }
             
             async function loadDependentScripts() {
-                // Prevent multiple script loading
-                if (window.dependentScriptsLoaded) {
-                    console.log('Dependent scripts already loaded, skipping duplicate loading');
-                    return;
+                // 極めて強力な重複防止機構
+                if (window.scriptLoadingStatus) {
+                    if (window.scriptLoadingStatus === 'loading') {
+                        console.log('🔄 Scripts already loading, waiting for completion...');
+                        // Wait for current loading to complete
+                        while (window.scriptLoadingStatus === 'loading') {
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+                        console.log('✅ Scripts loading completed by another process');
+                        return;
+                    } else if (window.scriptLoadingStatus === 'completed') {
+                        console.log('✅ Scripts already loaded completely, skipping');
+                        return;
+                    }
                 }
-                window.dependentScriptsLoaded = true;
+                
+                // ロード状態をマーク
+                window.scriptLoadingStatus = 'loading';
+                console.log('🚀 Starting script loading process...');
                 
                 // Three.jsが正常に読み込まれていることを確認
                 if (typeof THREE === 'undefined') {
                     console.warn('⏳ Three.js読み込み待機中...');
-                    // Wait for Three.js to load instead of showing error
                     await new Promise(resolve => {
                         const checkThree = () => {
                             if (typeof THREE !== 'undefined') {
@@ -137,12 +149,13 @@
                     });
                 }
                 
-                // タイムスタンプベースのキャッシュバスティング（単一固定値）
+                // 唯一のキャッシュバージョンを使用
                 if (!window.globalCacheVersion) {
                     window.globalCacheVersion = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    console.log('🔄 Creating unique cache version:', window.globalCacheVersion);
                 }
                 const cacheVersion = window.globalCacheVersion;
-                console.log('🔄 キャッシュバスティング版:', cacheVersion);
+                console.log('🔄 Using cache version:', cacheVersion);
                 
                 const dependentScripts = [
                     `js/three-compatibility.js?v=${cacheVersion}`,
@@ -167,8 +180,15 @@
                         await new Promise(resolve => setTimeout(resolve, 50));
                     } catch (error) {
                         console.error(`❌ Failed to load ${i+1}/${dependentScripts.length}: ${scriptSrc}`, error);
+                        // エラーが発生した場合、ステータスをリセット
+                        window.scriptLoadingStatus = 'error';
+                        throw error;
                     }
                 }
+                
+                // スクリプト読み込み完了をマーク
+                window.scriptLoadingStatus = 'completed';
+                console.log('🎉 All scripts loaded successfully!');
                 
                 // Script loading verification
                 console.log('Script loading verification:', {
