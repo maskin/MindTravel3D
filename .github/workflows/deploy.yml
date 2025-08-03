@@ -1,10 +1,9 @@
-name: Deploy to GitHub Pages
+# DEPRECATED: このワークフローは integrated-development.yml に統合されました
+name: "[DEPRECATED] Deploy to GitHub Pages"
 
 on:
-  # mainブランチにプッシュされたときに実行
-  push:
-    branches:
-      - main
+  # 手動実行のみ許可（緊急時用）
+  workflow_dispatch:
 
 # GITHUB_TOKEN のパーミッションを設定
 permissions:

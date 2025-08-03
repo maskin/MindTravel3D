@@ -1,14 +1,9 @@
-name: Claude PR Assistant
+# DEPRECATED: このワークフローは integrated-development.yml に統合されました
+name: "[DEPRECATED] Claude PR Assistant"
 
 on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
-  issues:
-    types: [opened, assigned]
-  pull_request_review:
-    types: [submitted]
+  # 手動実行のみ許可（テスト用）
+  workflow_dispatch:
 
 permissions:
   contents: read

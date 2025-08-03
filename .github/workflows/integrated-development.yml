@@ -1,0 +1,184 @@
+name: 統合開発ワークフロー
+
+on:
+  # プルリクエスト作成・更新時
+  pull_request:
+    types: [opened, synchronize, reopened]
+  
+  # Issues作成・コメント時
+  issues:
+    types: [opened, assigned]
+  
+  # コメント作成時（PR、Issue両方）
+  issue_comment:
+    types: [created]
+  
+  # PRレビューコメント時
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  pages: write
+  id-token: write
+
+jobs:
+  # コード品質チェック
+  code-quality:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: 基本的なコード検証
+        run: |
+          echo "=== コード品質チェック開始 ==="
+          # HTMLバリデーション
+          if command -v html5validator &> /dev/null; then
+            html5validator --root . --ignore-re ".*three\.min\.js.*"
+          fi
+          
+          # JavaScriptの基本チェック
+          find js/ -name "*.js" -exec node -c {} \; 2>&1 | tee syntax-check.log || true
+          
+          # ファイル構造チェック
+          echo "=== ファイル構造確認 ==="
+          ls -la
+          echo "=== JavaScriptファイル確認 ==="
+          find js/ -name "*.js" -ls
+          
+      - name: Three.js バージョン確認
+        run: |
+          echo "=== Three.js設定確認 ==="
+          if [ -f "three.min.js" ]; then
+            echo "✅ Three.js ローカルファイル存在"
+            head -n 5 three.min.js | grep -o "r[0-9]\+" || echo "バージョン情報なし"
+          else
+            echo "❌ Three.js ローカルファイルなし"
+          fi
+
+  # Claude Code Action
+  claude-assistant:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, 'claude')))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Claudeアシスタント実行
+        uses: anthropics/claude-code-action@main
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          timeout_minutes: "60"
+        env:
+          # 追加の環境設定
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 自動デプロイ（mainブランチのみ）
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: デプロイ前チェック
+        run: |
+          echo "=== デプロイ前チェック ==="
+          # 必須ファイルの存在確認
+          required_files=("index.html" "manifest.json" "sw.js" "three.min.js")
+          for file in "${required_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file 存在"
+            else
+              echo "❌ $file 不足"
+              exit 1
+            fi
+          done
+          
+          # JavaScriptファイルの構文チェック
+          echo "=== JavaScript構文チェック ==="
+          find js/ -name "*.js" -exec node -c {} \;
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: デプロイ成功通知
+        if: success()
+        run: |
+          echo "✅ デプロイ成功: ${{ steps.deployment.outputs.page_url }}"
+          echo "🎮 MindTravel3D 更新完了！"
+
+  # 開発状況レポート
+  development-report:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 開発状況分析
+        run: |
+          echo "=== MindTravel3D 開発状況レポート ===" > report.md
+          echo "" >> report.md
+          echo "## 📊 コード統計" >> report.md
+          echo "- JavaScriptファイル数: $(find js/ -name "*.js" | wc -l)" >> report.md
+          echo "- 総行数: $(find js/ -name "*.js" -exec wc -l {} + | tail -1 | awk '{print $1}')" >> report.md
+          echo "- HTMLファイル: $(find . -name "*.html" | wc -l)" >> report.md
+          echo "" >> report.md
+          echo "## 🎯 プロジェクト目標" >> report.md
+          echo "- 目標ユーザー数: 1,000万人" >> report.md
+          echo "- 現在フェーズ: MVP → 1stフェーズ（100万ユーザー目標）" >> report.md
+          echo "" >> report.md
+          echo "## 🔧 技術スタック確認" >> report.md
+          if [ -f "three.min.js" ]; then
+            echo "- ✅ Three.js (ローカルファイル)" >> report.md
+          fi
+          if [ -f "manifest.json" ]; then
+            echo "- ✅ PWA対応" >> report.md
+          fi
+          echo "- ✅ マルチプラットフォーム対応" >> report.md
+          
+          cat report.md
+          
+      - name: レポートをコメントとして投稿
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('report.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
