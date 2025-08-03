@@ -60,8 +60,12 @@ class UIManager {
     }
     
     closeModal() {
+        console.log('🔧 UIManager: closeModal() called');
         if (this.gameModal) {
+            console.log('🔧 UIManager: Setting modal display to none');
             this.gameModal.style.display = 'none';
+        } else {
+            console.warn('⚠️ UIManager: gameModal not found');
         }
     }
     
@@ -107,6 +111,7 @@ class UIManager {
     }
     
     showLoading(message) {
+        console.log('🔧 UIManager: showLoading() called with message:', message);
         this.showModal('読み込み中', message || '処理中です...');
     }
 }
