@@ -14,6 +14,13 @@
     <script>
         // Three.js ローダー with フォールバック機能
         (function() {
+            // Prevent multiple executions
+            if (window.threeLoaderStarted) {
+                console.log('Three.js loader already started, skipping duplicate execution');
+                return;
+            }
+            window.threeLoaderStarted = true;
+            
             let threeJsLoaded = false;
             
             function loadThreeJs() {
@@ -106,6 +113,13 @@
             }
             
             async function loadDependentScripts() {
+                // Prevent multiple script loading
+                if (window.dependentScriptsLoaded) {
+                    console.log('Dependent scripts already loaded, skipping duplicate loading');
+                    return;
+                }
+                window.dependentScriptsLoaded = true;
+                
                 // Three.jsが正常に読み込まれていることを確認
                 if (typeof THREE === 'undefined') {
                     console.warn('⏳ Three.js読み込み待機中...');
@@ -171,10 +185,19 @@
             }
             
             async function initializeGame() {
+                // Prevent multiple game initialization
+                if (window.gameInitialized) {
+                    console.log('Game already initialized, skipping duplicate initialization');
+                    return;
+                }
+                window.gameInitialized = true;
+                
                 console.log('DOM読み込み完了 - ゲーム初期化開始...');
                 
                 // グローバルゲームマネージャー作成
-                window.gameManager = new GameManager();
+                if (!window.gameManager) {
+                    window.gameManager = new GameManager();
+                }
                 
                 // 初期化実行
                 await window.gameManager.init();
