@@ -1,4 +1,5 @@
 // 3D迷路ゲーム - 3Dエンジン
+if (typeof window.GameEngine === 'undefined') {
 class GameEngine {
     constructor() {
         this.scene = null;
@@ -1037,3 +1038,4 @@ class GameEngine {
 
 // グローバルに公開
 window.GameEngine = GameEngine;
+}

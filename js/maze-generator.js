@@ -1,4 +1,5 @@
 // 3D迷路ゲーム - 迷路生成システム
+if (typeof window.MazeGenerator === 'undefined') {
 class MazeGenerator {
     constructor(width = 50, height = 50) {
         this.width = width;
@@ -133,3 +134,4 @@ class MazeGenerator {
 
 // グローバルに公開
 window.MazeGenerator = MazeGenerator;
+}

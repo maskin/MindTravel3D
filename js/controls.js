@@ -1,4 +1,5 @@
 // 3D迷路ゲーム - 操作システム
+if (typeof window.Controls === 'undefined') {
 class Controls {
     constructor(gameEngine) {
         this.gameEngine = gameEngine;
@@ -238,3 +239,4 @@ class Controls {
 
 // グローバルに公開
 window.Controls = Controls;
+}

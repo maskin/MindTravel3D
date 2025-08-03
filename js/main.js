@@ -1,4 +1,5 @@
 // 3D迷路ゲーム - メイン制御システム
+if (typeof window.GameManager === 'undefined') {
 class GameManager {
     constructor() {
         this.gameEngine = null;
@@ -287,6 +288,10 @@ class GameManager {
             console.log('PWA インストール完了');
         });
     }
+}
+
+// グローバルに公開
+window.GameManager = GameManager;
 }
 
 // ゲーム初期化は index.html の動的スクリプトローダーで行われます

@@ -1,4 +1,5 @@
 // 3D迷路ゲーム - UI管理システム
+if (typeof window.UIManager === 'undefined') {
 class UIManager {
     constructor() {
         this.startMenu = null;
@@ -116,26 +117,33 @@ class UIManager {
     }
 }
 
-// グローバル関数
-function startGame() {
-    if (window.gameManager) {
-        window.gameManager.startGame();
-    } else {
-        console.error('gameManager が見つかりません');
-    }
+// グローバル関数（重複回避）
+if (typeof window.startGame === 'undefined') {
+    window.startGame = function() {
+        if (window.gameManager) {
+            window.gameManager.startGame();
+        } else {
+            console.error('gameManager が見つかりません');
+        }
+    };
 }
 
-function showControls() {
-    if (window.uiManager) {
-        window.uiManager.showControls();
-    }
+if (typeof window.showControls === 'undefined') {
+    window.showControls = function() {
+        if (window.uiManager) {
+            window.uiManager.showControls();
+        }
+    };
 }
 
-function closeModal() {
-    if (window.uiManager) {
-        window.uiManager.closeModal();
-    }
+if (typeof window.closeModal === 'undefined') {
+    window.closeModal = function() {
+        if (window.uiManager) {
+            window.uiManager.closeModal();
+        }
+    };
 }
 
 // グローバルに公開
 window.UIManager = UIManager;
+}

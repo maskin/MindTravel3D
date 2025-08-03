@@ -11,6 +11,7 @@
  * - Backward compatibility checks
  */
 
+if (typeof window.ThreeCompatibility === 'undefined') {
 class ThreeCompatibility {
     constructor() {
         this.threeVersion = this.detectThreeVersion();
@@ -349,7 +350,9 @@ class ThreeCompatibility {
 }
 
 // Global compatibility instance
+window.ThreeCompatibility = ThreeCompatibility;
 window.ThreeCompat = new ThreeCompatibility();
+}
 
 // Auto-log info when loaded
 if (typeof THREE !== 'undefined') {
