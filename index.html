@@ -137,8 +137,11 @@
                     });
                 }
                 
-                // タイムスタンプベースのキャッシュバスティング
-                const cacheVersion = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                // タイムスタンプベースのキャッシュバスティング（単一固定値）
+                if (!window.globalCacheVersion) {
+                    window.globalCacheVersion = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                }
+                const cacheVersion = window.globalCacheVersion;
                 console.log('🔄 キャッシュバスティング版:', cacheVersion);
                 
                 const dependentScripts = [
@@ -151,12 +154,19 @@
                 ];
                 
                 console.log('✅ Three.js確認完了、依存スクリプト読み込み開始...');
-                for (const scriptSrc of dependentScripts) {
+                
+                // スクリプトを順次読み込み（並列実行を避ける）
+                for (let i = 0; i < dependentScripts.length; i++) {
+                    const scriptSrc = dependentScripts[i];
                     try {
+                        console.log(`📥 Loading ${i+1}/${dependentScripts.length}: ${scriptSrc}`);
                         await loadScript(scriptSrc);
-                        console.log(`✅ Loaded: ${scriptSrc}`);
+                        console.log(`✅ Loaded ${i+1}/${dependentScripts.length}: ${scriptSrc}`);
+                        
+                        // 各スクリプト読み込み後に少し待機
+                        await new Promise(resolve => setTimeout(resolve, 50));
                     } catch (error) {
-                        console.error(`❌ Failed to load: ${scriptSrc}`, error);
+                        console.error(`❌ Failed to load ${i+1}/${dependentScripts.length}: ${scriptSrc}`, error);
                     }
                 }
                 
