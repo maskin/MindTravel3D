@@ -244,8 +244,14 @@ class GameEngine {
     
     initScene() {
         this.scene = new THREE.Scene();
-        // Improved atmospheric fog for better depth perception
-        this.scene.fog = new THREE.Fog(0x000011, 3, 15);
+        
+        // Fog設定（利用可能な場合のみ）
+        if (THREE.Fog) {
+            console.log('✅ THREE.Fog available - adding atmospheric fog');
+            this.scene.fog = new THREE.Fog(0x000011, 3, 15);
+        } else {
+            console.log('⚠️ THREE.Fog not available - skipping fog effect');
+        }
     }
     
     initCamera() {
