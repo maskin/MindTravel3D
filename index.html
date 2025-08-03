@@ -113,13 +113,17 @@
                     return;
                 }
                 
+                // タイムスタンプベースのキャッシュバスティング
+                const cacheVersion = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                console.log('🔄 キャッシュバスティング版:', cacheVersion);
+                
                 const dependentScripts = [
-                    'js/three-compatibility.js?v=2025-08-03-fix2',
-                    'js/maze-generator.js?v=2025-08-03-fix2',
-                    'js/game-engine.js?v=2025-08-03-fix2',
-                    'js/controls.js?v=2025-08-03-fix2',
-                    'js/ui-manager.js?v=2025-08-03-fix2',
-                    'js/main.js?v=2025-08-03-fix2'
+                    `js/three-compatibility.js?v=${cacheVersion}`,
+                    `js/maze-generator.js?v=${cacheVersion}`,
+                    `js/game-engine.js?v=${cacheVersion}`,
+                    `js/controls.js?v=${cacheVersion}`,
+                    `js/ui-manager.js?v=${cacheVersion}`,
+                    `js/main.js?v=${cacheVersion}`
                 ];
                 
                 console.log('✅ Three.js確認完了、依存スクリプト読み込み開始...');
