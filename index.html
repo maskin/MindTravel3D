@@ -256,14 +256,48 @@
             position: relative;
             width: 100vw;
             height: 100vh;
+            display: flex;
         }
         
-        #gameCanvas {
+        .view-container {
+            position: relative;
+            flex: 1;
+            height: 100vh;
+            border: 2px solid #333333;
+        }
+        
+        #view3D {
+            border-right: 1px solid #555;
+        }
+        
+        #viewTopDown {
+            border-left: 1px solid #555;
+        }
+        
+        .view-title {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #fff;
+        }
+        
+        #gameCanvas3D {
             display: block;
             width: 100%;
             height: 100%;
-            background: #111111; /* Fallback background */
-            border: 2px solid #333333; /* Debug border */
+            background: #111111;
+        }
+        
+        #gameCanvasTopDown {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #001122;
         }
         
         #gameUI {
@@ -503,7 +537,14 @@
 </head>
 <body>
     <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+        <div id="view3D" class="view-container">
+            <div class="view-title">🎮 3D立体ビュー</div>
+            <canvas id="gameCanvas3D"></canvas>
+        </div>
+        <div id="viewTopDown" class="view-container">
+            <div class="view-title">🗺️ 俯瞰ビュー</div>
+            <canvas id="gameCanvasTopDown"></canvas>
+        </div>
         
         <div id="gameUI">
             <div id="gameInfo">

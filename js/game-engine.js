@@ -164,9 +164,9 @@ class GameEngine {
     }
     
     initRenderer() {
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('gameCanvas3D');
         if (!canvas) {
-            throw new Error('Canvas要素が見つかりません');
+            throw new Error('3Dビュー用Canvas要素が見つかりません');
         }
         
         console.log('Canvas found:', canvas);
