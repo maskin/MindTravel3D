@@ -24,6 +24,22 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🎮 DOM loaded - Starting game initialization...');
             
+            // Set initial canvas sizes to prevent zero-dimension issues
+            const canvas3D = document.getElementById('gameCanvas3D');
+            const canvasTopDown = document.getElementById('gameCanvasTopDown');
+            
+            if (canvas3D) {
+                canvas3D.width = canvas3D.clientWidth || 800;
+                canvas3D.height = canvas3D.clientHeight || 600;
+                console.log('Canvas3D size set:', canvas3D.width, 'x', canvas3D.height);
+            }
+            
+            if (canvasTopDown) {
+                canvasTopDown.width = canvasTopDown.clientWidth || 800;
+                canvasTopDown.height = canvasTopDown.clientHeight || 600;
+                console.log('CanvasTopDown size set:', canvasTopDown.width, 'x', canvasTopDown.height);
+            }
+            
             // Check if all required components are available
             const requiredComponents = {
                 THREE: typeof THREE,
@@ -105,6 +121,8 @@
             width: 100%;
             height: 100%;
             background: #111111;
+            min-width: 400px;
+            min-height: 300px;
         }
         
         #gameCanvasTopDown {
@@ -112,6 +130,8 @@
             width: 100%;
             height: 100%;
             background: #001122;
+            min-width: 400px;
+            min-height: 300px;
         }
         
         #gameUI {
@@ -491,6 +511,24 @@
             if (event.ctrlKey && event.key === 'd') {
                 event.preventDefault();
                 toggleDebugPanel();
+            }
+        });
+        
+        // Window resize handler to update canvas sizes
+        window.addEventListener('resize', function() {
+            const canvas3D = document.getElementById('gameCanvas3D');
+            const canvasTopDown = document.getElementById('gameCanvasTopDown');
+            
+            if (canvas3D) {
+                canvas3D.width = canvas3D.clientWidth;
+                canvas3D.height = canvas3D.clientHeight;
+                console.log('Canvas3D resized:', canvas3D.width, 'x', canvas3D.height);
+            }
+            
+            if (canvasTopDown) {
+                canvasTopDown.width = canvasTopDown.clientWidth;
+                canvasTopDown.height = canvasTopDown.clientHeight;
+                console.log('CanvasTopDown resized:', canvasTopDown.width, 'x', canvasTopDown.height);
             }
         });
     </script>

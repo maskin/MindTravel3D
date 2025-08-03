@@ -204,7 +204,11 @@ class GameEngine {
             this.renderer = new THREE.WebGLRenderer(rendererParams);
             console.log('✅ THREE.WebGLRenderer created successfully:', this.renderer);
             
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            // Set renderer size to canvas dimensions for dual view
+            const canvasWidth = canvas.clientWidth || window.innerWidth / 2;
+            const canvasHeight = canvas.clientHeight || window.innerHeight;
+            this.renderer.setSize(canvasWidth, canvasHeight);
+            console.log('Renderer size set to:', canvasWidth, 'x', canvasHeight);
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             this.renderer.setClearColor(0x000000);
             this.renderer.shadowMap.enabled = true;
@@ -856,9 +860,16 @@ class GameEngine {
     handleResize() {
         if (!this.camera || !this.renderer) return;
         
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        const canvas = document.getElementById('gameCanvas3D');
+        if (canvas) {
+            const canvasWidth = canvas.clientWidth || window.innerWidth / 2;
+            const canvasHeight = canvas.clientHeight || window.innerHeight;
+            
+            this.camera.aspect = canvasWidth / canvasHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(canvasWidth, canvasHeight);
+            console.log('Game engine resized to:', canvasWidth, 'x', canvasHeight);
+        }
     }
     
     // 現在の回転角度に基づいて移動方向を取得
