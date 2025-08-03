@@ -108,9 +108,19 @@
             async function loadDependentScripts() {
                 // Three.jsが正常に読み込まれていることを確認
                 if (typeof THREE === 'undefined') {
-                    console.error('❌ 依存スクリプト読み込み時点でTHREEが未定義');
-                    alert('Three.jsの読み込みに失敗しました。ページを再読み込みしてください。');
-                    return;
+                    console.warn('⏳ Three.js読み込み待機中...');
+                    // Wait for Three.js to load instead of showing error
+                    await new Promise(resolve => {
+                        const checkThree = () => {
+                            if (typeof THREE !== 'undefined') {
+                                console.log('✅ Three.js読み込み完了、依存スクリプト開始');
+                                resolve();
+                            } else {
+                                setTimeout(checkThree, 100);
+                            }
+                        };
+                        checkThree();
+                    });
                 }
                 
                 // タイムスタンプベースのキャッシュバスティング
