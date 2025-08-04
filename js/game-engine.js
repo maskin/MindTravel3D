@@ -14,7 +14,7 @@ class GameEngine {
         // プレイヤー設定
         this.playerPosition = { x: 1.5, z: 1.5 };
         this.playerRotation = 0; // 0=北, π/2=東, π=南, 3π/2=西
-        this.playerHeight = 1.7;
+        this.playerHeight = 5.0;  // カメラを高く上げて俯瞰視点にする
         this.moveSpeed = 0.5; // より大きな移動ステップで視覚的に確認しやすく
         this.rotationSpeed = Math.PI / 2; // 90度
         
@@ -824,8 +824,12 @@ class GameEngine {
             this.playerPosition.z
         );
 
-        // データが正常になったため、補正なしでプレイヤーの回転をそのまま適用
+        // 【緊急修正】カメラの向きを完全に修正
+        // プレイヤーの回転角度を直接カメラに適用し、座標系に合わせて調整
         this.camera.rotation.y = this.playerRotation;
+        
+        // 強制的にカメラを下向きにして床とマーカーを見るようにする
+        this.camera.rotation.x = -Math.PI / 3; // 60度下向き
 
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
