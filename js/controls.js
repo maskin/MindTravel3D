@@ -83,7 +83,7 @@ class Controls {
     requestPointerLock() {
         if (!this.gameEngine.isGameStarted) return;
         
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('gameCanvas3D');
         if (canvas) {
             canvas.requestPointerLock = canvas.requestPointerLock || 
                                       canvas.mozRequestPointerLock || 
@@ -95,7 +95,7 @@ class Controls {
     }
     
     onPointerLockChange() {
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('gameCanvas3D');
         this.isPointerLocked = document.pointerLockElement === canvas ||
                              document.mozPointerLockElement === canvas ||
                              document.webkitPointerLockElement === canvas;
@@ -123,7 +123,7 @@ class Controls {
     }
     
     initTouchControls() {
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('gameCanvas3D');
         if (!canvas) return;
         
         let touchStartX = 0;

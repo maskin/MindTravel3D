@@ -710,9 +710,9 @@ class GameEngine {
         
         this.camera.position.set(x, y, z);
         
-        // カメラの向きを設定
+        // カメラの向きを設定 (座標系修正)
         const lookX = x + Math.sin(this.playerRotation);
-        const lookZ = z + Math.cos(this.playerRotation);
+        const lookZ = z - Math.cos(this.playerRotation); // Z軸を逆に
         this.camera.lookAt(lookX, y, lookZ);
         
         // プレイヤーライトの位置と向きを更新
@@ -729,17 +729,20 @@ class GameEngine {
         let newX = this.playerPosition.x;
         let newZ = this.playerPosition.z;
         
-        // 移動方向を計算 (座標系修正)
+        // 移動方向を計算 (正しい座標系)
+        // 0度=北(マイナスZ方向), 90度=東(プラスX方向)
         switch (direction) {
             case 'forward':
                 newX += Math.sin(this.playerRotation) * this.moveSpeed;
-                newZ += Math.cos(this.playerRotation) * this.moveSpeed;
+                newZ -= Math.cos(this.playerRotation) * this.moveSpeed; // Z軸を逆に
                 break;
             case 'backward':
                 newX -= Math.sin(this.playerRotation) * this.moveSpeed;
-                newZ -= Math.cos(this.playerRotation) * this.moveSpeed;
+                newZ += Math.cos(this.playerRotation) * this.moveSpeed; // Z軸を逆に
                 break;
         }
+        
+        console.log('移動試行:', direction, '現在位置:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2), '新位置:', newX.toFixed(2), newZ.toFixed(2));
         
         // 衝突判定 - XとZを別々にチェックして壁に沿った移動を可能に
         let canMoveX = this.canMoveTo(newX, this.playerPosition.z);
@@ -750,14 +753,18 @@ class GameEngine {
             // 両方向に移動可能
             this.playerPosition.x = newX;
             this.playerPosition.z = newZ;
+            console.log('移動成功（両方向）:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
         } else if (canMoveX) {
             // X方向だけ移動可能
             this.playerPosition.x = newX;
+            console.log('移動成功（X方向のみ）:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
         } else if (canMoveZ) {
             // Z方向だけ移動可能
             this.playerPosition.z = newZ;
+            console.log('移動成功（Z方向のみ）:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
         } else {
             // 移動不可
+            console.log('移動不可 - 壁にブロックされました');
             return false;
         }
         
@@ -769,12 +776,13 @@ class GameEngine {
     rotatePlayer(direction) {
         if (this.isMoving) return;
         
+        // 回転方向を修正（右キーで右回転、左キーで左回転）
         switch (direction) {
             case 'left':
-                this.playerRotation -= this.rotationSpeed;
+                this.playerRotation += this.rotationSpeed; // 左回転（正の方向）
                 break;
             case 'right':
-                this.playerRotation += this.rotationSpeed;
+                this.playerRotation -= this.rotationSpeed; // 右回転（負の方向）
                 break;
         }
         
@@ -787,6 +795,7 @@ class GameEngine {
         }
         
         this.updateCameraPosition();
+        console.log('回転:', direction, '現在の角度:', (this.playerRotation * 180 / Math.PI).toFixed(1), '度');
     }
     
     canMoveTo(x, z) {
