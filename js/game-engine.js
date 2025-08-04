@@ -825,9 +825,9 @@ class GameEngine {
         const moveStep = direction === 'forward' ? 1 : -1;
         const angle = this.playerRotation;
 
-        // 誤差なく移動方向を計算
-        const moveX = Math.round(-Math.sin(angle));
-        const moveZ = Math.round(Math.cos(angle));
+        // 正しい移動方向を計算（座標系に合わせて修正）
+        const moveX = Math.round(Math.sin(angle));
+        const moveZ = Math.round(-Math.cos(angle));
 
         // 現在のグリッド座標
         const currentGridX = Math.floor(this.playerPosition.x);
@@ -875,6 +875,7 @@ class GameEngine {
 
         // カメラの状態を即座に更新
         this.updateCameraPosition();
+        console.log('🔄 プレイヤー回転:', (this.playerRotation * 180 / Math.PI).toFixed(0), '度');
     }
     
     canMoveTo(x, z) {
