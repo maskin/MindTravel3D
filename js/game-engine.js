@@ -601,7 +601,73 @@ class GameEngine {
             const pos3D = `(${dir.x}, Y, ${dir.z})`;
             console.log(`  ${dir.name}方向: ${dir.desc} = ${mazeValue} → 3D${pos3D} ${is3DWall ? '壁あり' : '通路'}`);
         });
+        
+        // 3D表現の視覚的デバッグ：スタート地点周辺に色付きマーカー追加
+        this.addVisualDebugMarkers(mazeData);
         console.log('3D迷路作成完了');
+    }
+    
+    addVisualDebugMarkers(mazeData) {
+        // スタート地点(1,1)周辺の4方向に色付きマーカーを追加
+        const markerHeight = 0.2;
+        const markerSize = 0.3;
+        
+        // 方向マーカー（プレイヤー位置から見た方向）
+        const markers = [
+            { x: 1, z: 0, color: 0xff0000, name: '北' },   // 北（赤）
+            { x: 2, z: 1, color: 0x00ff00, name: '東' },   // 東（緑）  
+            { x: 1, z: 2, color: 0x0000ff, name: '南' },   // 南（青）
+            { x: 0, z: 1, color: 0xffff00, name: '西' }    // 西（黄）
+        ];
+        
+        markers.forEach(marker => {
+            const markerGeometry = window.ThreeCompat ?
+                window.ThreeCompat.createBoxGeometry(markerSize, markerHeight, markerSize) :
+                new THREE.BoxGeometry(markerSize, markerHeight, markerSize);
+                
+            const markerMaterial = window.ThreeCompat ?
+                window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
+                    color: marker.color,
+                    emissive: marker.color,
+                    transparent: false
+                }) :
+                new THREE.MeshPhongMaterial({ 
+                    color: marker.color,
+                    emissive: marker.color,
+                    transparent: false
+                });
+            
+            const markerMesh = new THREE.Mesh(markerGeometry, markerMaterial);
+            markerMesh.position.set(marker.x, markerHeight / 2, marker.z);
+            this.scene.add(markerMesh);
+            
+            // 迷路データの値も確認
+            const mazeValue = mazeData[marker.z] && mazeData[marker.z][marker.x] !== undefined ? 
+                mazeData[marker.z][marker.x] : 'undefined';
+            console.log(`🎯 ${marker.name}方向マーカー: 3D(${marker.x}, ${marker.z}) maze[${marker.z}][${marker.x}]=${mazeValue}`);
+        });
+        
+        // プレイヤースタート位置にマーカー追加
+        const startMarkerGeometry = window.ThreeCompat ?
+            window.ThreeCompat.createCylinderGeometry(0.2, 0.2, 0.1, 8) :
+            new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
+            
+        const startMarkerMaterial = window.ThreeCompat ?
+            window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
+                color: 0xff00ff,
+                emissive: 0xff00ff,
+                transparent: false
+            }) :
+            new THREE.MeshPhongMaterial({ 
+                color: 0xff00ff,
+                emissive: 0xff00ff,
+                transparent: false
+            });
+        
+        const startMarker = new THREE.Mesh(startMarkerGeometry, startMarkerMaterial);
+        startMarker.position.set(1.5, 0.05, 1.5);
+        this.scene.add(startMarker);
+        console.log('🎯 プレイヤースタート位置マーカー: 3D(1.5, 1.5) - マゼンタ色');
     }
     
     createGoal(x, z) {
@@ -891,6 +957,7 @@ class GameEngine {
     
     rotatePlayer(direction) {
         if (this.isMoving) return;
+
         const rotationStep = Math.PI / 2; // 90度
 
         // 【最終修正点】左右の回転方向を正しくする
