@@ -102,24 +102,26 @@ class Controls {
     }
     
     onMouseMove(event) {
+        // マウスによる自由視点移動を無効化。
+        // グリッドベースの90度回転と競合し、動作不良の原因となるため。
         if (!this.isPointerLocked || !this.gameEngine.isGameStarted) return;
         
-        const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+        // const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
         
-        // マウス移動で視点回転
-        if (Math.abs(movementX) > 0) {
-            this.gameEngine.playerRotation += movementX * this.mouseSpeed;
-            
-            // 角度を正規化
-            while (this.gameEngine.playerRotation < 0) {
-                this.gameEngine.playerRotation += Math.PI * 2;
-            }
-            while (this.gameEngine.playerRotation >= Math.PI * 2) {
-                this.gameEngine.playerRotation -= Math.PI * 2;
-            }
-            
-            this.gameEngine.updateCameraPosition();
-        }
+        // // マウス移動で視点回転
+        // if (Math.abs(movementX) > 0) {
+        //     this.gameEngine.playerRotation += movementX * this.mouseSpeed;
+        //     
+        //     // 角度を正規化
+        //     while (this.gameEngine.playerRotation < 0) {
+        //         this.gameEngine.playerRotation += Math.PI * 2;
+        //     }
+        //     while (this.gameEngine.playerRotation >= Math.PI * 2) {
+        //         this.gameEngine.playerRotation -= Math.PI * 2;
+        //     }
+        //     
+        //     this.gameEngine.updateCameraPosition();
+        // }
     }
     
     initTouchControls() {
