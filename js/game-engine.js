@@ -850,10 +850,6 @@ class GameEngine {
     }
     
     movePlayer(direction) {
-        if (this.isMoving) {
-            return false;
-        }
-
         const moveStep = direction === 'forward' ? 1 : -1;
         const angle = this.playerRotation;
 
@@ -892,7 +888,6 @@ class GameEngine {
     }
     
     rotatePlayer(direction) {
-        if (this.isMoving) return;
         
         // 90度単位の回転（グリッド対応）
         const rotationStep = Math.PI / 2; // 90度
