@@ -713,60 +713,35 @@ class GameEngine {
     }
     
     updateCameraPosition() {
-        try {
-            console.log('🎯 updateCameraPosition 呼び出し開始');
-            
-            if (!this.camera) {
-                console.log('🎯 カメラが存在しません');
-                return;
-            }
-            
-            console.log('🎯 カメラ存在確認OK');
-            
-            const x = this.playerPosition.x;
-            const z = this.playerPosition.z;
-            const y = this.playerHeight;
-            
-            console.log('🎯 座標取得:', x, y, z);
-            
-            this.camera.position.set(x, y, z);
-            console.log('🎯 カメラ位置設定完了 - 実際の位置:', this.camera.position.x.toFixed(2), this.camera.position.y.toFixed(2), this.camera.position.z.toFixed(2));
-            
-            // カメラの向きを設定 (Three.jsの座標系に合わせて調整)
-            // Three.js: Y軸回転0度で-Z方向、ゲーム: 0度で北(-Z)方向なので一致
-            // ただし、カメラの初期向きを考慮して-90度調整
-            this.camera.rotation.y = this.playerRotation - Math.PI/2;
-            console.log('🎯 カメラ回転設定完了 - 角度:', this.camera.rotation.y.toFixed(2));
-            
-            // カメラの行列を強制更新（安全チェック付き）
-            if (typeof this.camera.updateMatrixWorld === 'function') {
-                this.camera.updateMatrixWorld();
-            }
-            if (typeof this.camera.updateProjectionMatrix === 'function') {
-                this.camera.updateProjectionMatrix();
-            }
-            console.log('🎯 カメラ行列更新完了');
-            
-            // プレイヤーライトの位置と向きを更新
-            if (this.playerLight) {
-                this.playerLight.position.set(x, y, z);
-                this.playerLight.target.position.set(lookX, y - 0.5, lookZ);
-                if (this.playerLight.target && typeof this.playerLight.target.updateMatrixWorld === 'function') {
-                    this.playerLight.target.updateMatrixWorld();
-                }
-                console.log('🎯 プレイヤーライト更新完了');
-            }
-            
-            // カメラ更新後にレンダリングを強制実行
-            console.log('🎯 forceRender呼び出し開始');
-            this.forceRender();
-            console.log('🎯 forceRender呼び出し完了');
-            
-            console.log('🎯 updateCameraPosition 正常完了');
-            
-        } catch (error) {
-            console.error('🚨 updateCameraPosition でエラー発生:', error);
-            console.error('🚨 エラースタック:', error.stack);
+        if (!this.camera) {
+            return;
+        }
+
+        // 1. カメラの位置をプレイヤーデータに正確に合わせる
+        this.camera.position.set(
+            this.playerPosition.x,
+            this.playerHeight,
+            this.playerPosition.z
+        );
+
+        // 2. クォータニオンを使ってカメラの向きを安全に設定する
+        // Y軸（上方向）を軸として、プレイヤーの回転角度だけ回転させる
+        const quaternion = new THREE.Quaternion();
+        quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.playerRotation);
+
+        // 既存のカメラの回転を、計算したクォータニオンで完全に上書きする
+        this.camera.quaternion.copy(quaternion);
+
+        // 3. プレイヤーライトの位置と向きを更新
+        if (this.playerLight) {
+            this.playerLight.position.copy(this.camera.position);
+
+            const targetPosition = new THREE.Vector3(0, 0, -1);
+            targetPosition.applyQuaternion(this.camera.quaternion);
+            targetPosition.add(this.camera.position);
+
+            this.playerLight.target.position.copy(targetPosition);
+            this.playerLight.target.updateMatrixWorld();
         }
     }
     
@@ -851,10 +826,9 @@ class GameEngine {
         const moveStep = direction === 'forward' ? 1 : -1;
         const angle = this.playerRotation;
 
-        // 回転角度から移動ベクトルを直接計算 (結果は-1, 0, 1の整数になる)
-        // 0度=北(Z-), 90度=東(X+), 180度=南(Z+), 270度=西(X-)
-        const moveX = Math.round(Math.sin(angle));   // X軸成分（東西方向）
-        const moveZ = Math.round(-Math.cos(angle));  // Z軸成分（南北方向、Zは反転）
+        // 誤差なく移動方向を計算
+        const moveX = Math.round(-Math.sin(angle));
+        const moveZ = Math.round(Math.cos(angle));
 
         // 現在のグリッド座標
         const currentGridX = Math.floor(this.playerPosition.x);
@@ -886,49 +860,22 @@ class GameEngine {
     }
     
     rotatePlayer(direction) {
-        
-        // 90度単位の回転（グリッド対応）
         const rotationStep = Math.PI / 2; // 90度
-        
-        switch (direction) {
-            case 'left':
-                this.playerRotation += rotationStep; // 左回転（反時計回り）
-                break;
-            case 'right':
-                this.playerRotation -= rotationStep; // 右回転（時計回り）
-                break;
+
+        if (direction === 'left') {
+            this.playerRotation += rotationStep;
+        } else if (direction === 'right') {
+            this.playerRotation -= rotationStep;
         }
-        
-        // 角度を正規化（0～2π）
-        while (this.playerRotation < 0) {
+
+        // 角度を 0 ～ 2π の範囲に正規化
+        this.playerRotation = this.playerRotation % (Math.PI * 2);
+        if (this.playerRotation < 0) {
             this.playerRotation += Math.PI * 2;
         }
-        while (this.playerRotation >= Math.PI * 2) {
-            this.playerRotation -= Math.PI * 2;
-        }
-        
-        // 角度を90度単位にスナップ（誤差を修正）
-        const snapAngle = Math.round(this.playerRotation / rotationStep) * rotationStep;
-        this.playerRotation = snapAngle;
-        
-        console.log('🎯 回転後 updateCameraPosition 呼び出し試行');
-        try {
-            this.updateCameraPosition();
-            console.log('🎯 回転後 updateCameraPosition 呼び出し成功');
-        } catch (error) {
-            console.error('🚨 回転後 updateCameraPosition 呼び出しエラー:', error);
-        }
-        
-        // 強制レンダリングで即座に視覚的フィードバックを提供
-        console.log('🎯 回転後 forceRender 直接呼び出し試行');
-        try {
-            this.forceRender();
-            console.log('🎯 回転後 forceRender 直接呼び出し成功');
-        } catch (error) {
-            console.error('🚨 回転後 forceRender 直接呼び出しエラー:', error);
-        }
-        
-        console.log('90度回転:', direction, '現在の角度:', (this.playerRotation * 180 / Math.PI).toFixed(0), '度');
+
+        // カメラの状態を即座に更新
+        this.updateCameraPosition();
     }
     
     canMoveTo(x, z) {
