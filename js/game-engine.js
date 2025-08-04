@@ -733,7 +733,7 @@ class GameEngine {
             console.log('🎯 カメラ位置設定完了 - 実際の位置:', this.camera.position.x.toFixed(2), this.camera.position.y.toFixed(2), this.camera.position.z.toFixed(2));
             
             // カメラの向きを設定 (回転ベース、lookAtではなく直接rotation設定)
-            this.camera.rotation.y = this.playerRotation + Math.PI;
+            this.camera.rotation.y = this.playerRotation;
             console.log('🎯 カメラ回転設定完了 - 角度:', this.camera.rotation.y.toFixed(2));
             
             // カメラの行列を強制更新（安全チェック付き）
