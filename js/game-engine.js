@@ -565,6 +565,20 @@ class GameEngine {
         // ゴールの作成
         this.createGoal(mazeData[0].length - 2, mazeData.length - 2);
         
+        // 3D描画デバッグ: スタート周辺の壁配置を確認
+        console.log('🏗️ 3D迷路描画検証:');
+        for (let checkY = 0; checkY < Math.min(3, mazeData.length); checkY++) {
+            for (let checkX = 0; checkX < Math.min(3, mazeData[0].length); checkX++) {
+                const isWall = mazeData[checkY][checkX] === 1;
+                const pos3D = `(${checkX}, Y, ${checkY})`;
+                console.log(`  maze[${checkY}][${checkX}] = ${mazeData[checkY][checkX]} → 3D${pos3D} ${isWall ? '壁配置' : '通路（壁なし）'}`);
+            }
+        }
+        console.log('🏗️ プレイヤー位置(1.5, 1.5)から見える期待値:');
+        console.log('  - 北(1,0): 壁があるはず');
+        console.log('  - 西(0,1): 壁があるはず'); 
+        console.log('  - 東(2,1): 通路で壁なしのはず');
+        console.log('  - 南(1,2): 通路で壁なしのはず');
         console.log('3D迷路作成完了');
     }
     
