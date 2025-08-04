@@ -721,6 +721,62 @@ class GameEngine {
             this.playerLight.target.position.set(lookX, y - 0.5, lookZ);
             this.playerLight.target.updateMatrixWorld();
         }
+        
+        // カメラ更新後にレンダリングを強制実行
+        this.forceRender();
+        
+        console.log('Camera lookAt coordinates:', lookX, y, lookZ);
+    }
+    
+    // 強制レンダリング（キーボード移動の視覚的フィードバック改善）
+    forceRender() {
+        if (this.renderer && this.scene && this.camera) {
+            // アニメーションループを待たずに即座にレンダリング
+            requestAnimationFrame(() => {
+                this.renderer.render(this.scene, this.camera);
+            });
+        }
+    }
+    
+    // 移動時の視覚的フィードバック（軽微なカメラシェイク）
+    addMovementFeedback() {
+        if (!this.camera) return;
+        
+        const originalY = this.playerHeight;
+        let shakeAmount = 0.02; // 基本の揺れ量
+        let duration = 100; // 基本の持続時間
+        
+        // 移動タイプに応じてフィードバックを調整
+        switch (this.movementType) {
+            case 'normal':
+                shakeAmount = 0.025; // 通常移動は少し大きめ
+                break;
+            case 'slide-x':
+            case 'slide-z':
+                shakeAmount = 0.015; // 壁滑り移動は小さめだが確実に感じられる
+                duration = 150; // 少し長めの持続時間
+                console.log('👆 壁滑り移動フィードバック:', this.movementType);
+                break;
+            default:
+                shakeAmount = 0.02;
+        }
+        
+        // 短時間のシェイク効果
+        this.camera.position.y = originalY + shakeAmount;
+        
+        setTimeout(() => {
+            if (this.camera) {
+                this.camera.position.y = originalY - shakeAmount * 0.5;
+                setTimeout(() => {
+                    if (this.camera) {
+                        this.camera.position.y = originalY;
+                    }
+                }, duration / 2);
+            }
+        }, duration / 2);
+        
+        // 移動タイプをリセット
+        this.movementType = null;
     }
     
     movePlayer(direction) {
@@ -756,6 +812,7 @@ class GameEngine {
             this.playerPosition.x = newX;
             this.playerPosition.z = newZ;
             console.log('移動後(両方向):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+            this.movementType = 'normal'; // 通常移動
         } else {
             // 壁に沿った移動を試行
             let moved = false;
@@ -764,11 +821,13 @@ class GameEngine {
                 console.log('移動前(Xのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
                 this.playerPosition.x = newX;
                 console.log('移動後(Xのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+                this.movementType = 'slide-x'; // X方向滑り移動
                 moved = true;
             } else if (this.canMoveTo(this.playerPosition.x, newZ)) {
                 console.log('移動前(Zのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
                 this.playerPosition.z = newZ;
                 console.log('移動後(Zのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+                this.movementType = 'slide-z'; // Z方向滑り移動
                 moved = true;
             }
             
@@ -779,6 +838,10 @@ class GameEngine {
         }
         
         this.updateCameraPosition();
+        
+        // 移動時の軽微なカメラシェイク効果（視覚的フィードバック）
+        this.addMovementFeedback();
+        
         this.checkGoal();
         return true;
     }
