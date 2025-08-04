@@ -732,13 +732,9 @@ class GameEngine {
             this.camera.position.set(x, y, z);
             console.log('🎯 カメラ位置設定完了 - 実際の位置:', this.camera.position.x.toFixed(2), this.camera.position.y.toFixed(2), this.camera.position.z.toFixed(2));
             
-            // カメラの向きを設定 (移動と同じ座標系)
-            const lookX = x + Math.sin(this.playerRotation);
-            const lookZ = z - Math.cos(this.playerRotation);
-            console.log('🎯 lookAt座標計算:', lookX, y, lookZ);
-            
-            this.camera.lookAt(lookX, y, lookZ);
-            console.log('🎯 カメラlookAt完了');
+            // カメラの向きを設定 (回転ベース、lookAtではなく直接rotation設定)
+            this.camera.rotation.y = this.playerRotation + Math.PI;
+            console.log('🎯 カメラ回転設定完了 - 角度:', this.camera.rotation.y.toFixed(2));
             
             // カメラの行列を強制更新（安全チェック付き）
             if (typeof this.camera.updateMatrixWorld === 'function') {
