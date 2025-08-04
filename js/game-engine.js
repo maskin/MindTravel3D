@@ -730,7 +730,7 @@ class GameEngine {
             console.log('🎯 座標取得:', x, y, z);
             
             this.camera.position.set(x, y, z);
-            console.log('🎯 カメラ位置設定完了');
+            console.log('🎯 カメラ位置設定完了 - 実際の位置:', this.camera.position.x.toFixed(2), this.camera.position.y.toFixed(2), this.camera.position.z.toFixed(2));
             
             // カメラの向きを設定 (移動と同じ座標系)
             const lookX = x - Math.sin(this.playerRotation);
