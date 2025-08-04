@@ -579,6 +579,28 @@ class GameEngine {
         console.log('  - 西(0,1): 壁があるはず'); 
         console.log('  - 東(2,1): 通路で壁なしのはず');
         console.log('  - 南(1,2): 通路で壁なしのはず');
+        
+        // 【重要】座標系検証：迷路データと3D表現の完全な整合性チェック
+        console.log('🎯 座標系整合性検証:');
+        console.log('迷路配列maze[y][x] → 3D世界position.set(x, height, y)');
+        console.log('プレイヤー座標(x,z) → 迷路チェックmaze[z][x]');
+        
+        // プレイヤーのスタート位置(1.5, 1.5)から4方向をチェック
+        const playerStartX = 1.5;
+        const playerStartZ = 1.5;
+        const directions = [
+            { name: '北', x: 1, z: 0, desc: 'maze[0][1]' },
+            { name: '東', x: 2, z: 1, desc: 'maze[1][2]' },
+            { name: '南', x: 1, z: 2, desc: 'maze[2][1]' },
+            { name: '西', x: 0, z: 1, desc: 'maze[1][0]' }
+        ];
+        
+        directions.forEach(dir => {
+            const mazeValue = mazeData[dir.z] && mazeData[dir.z][dir.x] !== undefined ? mazeData[dir.z][dir.x] : 'undefined';
+            const is3DWall = mazeValue === 1;
+            const pos3D = `(${dir.x}, Y, ${dir.z})`;
+            console.log(`  ${dir.name}方向: ${dir.desc} = ${mazeValue} → 3D${pos3D} ${is3DWall ? '壁あり' : '通路'}`);
+        });
         console.log('3D迷路作成完了');
     }
     
