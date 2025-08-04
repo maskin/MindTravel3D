@@ -824,12 +824,12 @@ class GameEngine {
             this.playerPosition.z
         );
 
-        // 【緊急修正】カメラの向きを完全に修正
-        // プレイヤーの回転角度を直接カメラに適用し、座標系に合わせて調整
+        // 俯瞰視点でのカメラ向き修正
+        // カメラをプレイヤーと同じ方向に向ける（前方が上になるように）
         this.camera.rotation.y = this.playerRotation;
         
-        // 強制的にカメラを下向きにして床とマーカーを見るようにする
-        this.camera.rotation.x = -Math.PI / 3; // 60度下向き
+        // カメラを真下向きにして俯瞰マップのような見た目にする
+        this.camera.rotation.x = -Math.PI / 2; // 90度下向き（真下）
 
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
