@@ -691,8 +691,13 @@ class GameEngine {
     }
     
     setPlayerPosition(x, z) {
-        this.playerPosition.x = x;
-        this.playerPosition.z = z;
+        // グリッドセンターに強制配置
+        const gridX = Math.floor(x);
+        const gridZ = Math.floor(z);
+        this.playerPosition.x = gridX + 0.5;
+        this.playerPosition.z = gridZ + 0.5;
+        
+        console.log('プレイヤー位置設定 - グリッドセンター:', this.playerPosition.x, this.playerPosition.z);
         this.updateCameraPosition();
     }
     
@@ -790,6 +795,8 @@ class GameEngine {
     
     movePlayer(direction) {
         if (this.isMoving) return false;
+        
+        console.log('🎯 グリッドベース移動システム v2.0 - 実行中');
         
         // グリッド単位移動 - 現在位置をグリッド座標に変換
         let currentGridX = Math.floor(this.playerPosition.x);
