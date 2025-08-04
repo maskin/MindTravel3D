@@ -96,12 +96,12 @@ class MazeGenerator {
         if (goalY > 1) this.maze[goalY - 1][goalX] = 0;
         
         // デバッグ: スタート地点周辺の状態を表示（座標系修正）
-        console.log('スタート地点周辺の状態:');
-        console.log('  北(1,0):', this.maze[0][1] === 0 ? '通路' : '壁');
-        console.log('  西(0,1):', this.maze[1][0] === 0 ? '通路' : '壁');
-        console.log('→ スタート(1,1):', this.maze[1][1] === 0 ? '通路' : '壁');
-        console.log('  東(2,1):', this.maze[1][2] === 0 ? '通路' : '壁');
-        console.log('  南(1,2):', this.maze[2][1] === 0 ? '通路' : '壁');
+        console.log('🔍 迷路配列 (maze[y][x] = maze[z][x]) の状態:');
+        console.log('  北 maze[0][1] (X=1,Z=0):', this.maze[0][1] === 0 ? '通路' : '壁');
+        console.log('  西 maze[1][0] (X=0,Z=1):', this.maze[1][0] === 0 ? '通路' : '壁');
+        console.log('→ スタート maze[1][1] (X=1,Z=1):', this.maze[1][1] === 0 ? '通路' : '壁');
+        console.log('  東 maze[1][2] (X=2,Z=1):', this.maze[1][2] === 0 ? '通路' : '壁');
+        console.log('  南 maze[2][1] (X=1,Z=2):', this.maze[2][1] === 0 ? '通路' : '壁');
         
         // 詳細デバッグ: 配列インデックス確認
         console.log('🔍 配列詳細確認:');
