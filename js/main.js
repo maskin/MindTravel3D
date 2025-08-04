@@ -71,7 +71,10 @@ class GameManager {
             
             // Step 7: アニメーション開始
             console.log('📋 初期化 Step 7: アニメーション開始...');
+            console.log('🚀 GameEngine.animate()関数存在確認:', typeof this.gameEngine.animate);
+            console.log('🚀 GameEngine.animate()関数呼び出し直前');
             this.gameEngine.animate();
+            console.log('🚀 GameEngine.animate()関数呼び出し完了');
             console.log('✅ Step 7 完了: アニメーション開始済み');
             
             // 初期化完了フラグ設定
@@ -208,7 +211,10 @@ class GameManager {
             // プレイヤー位置設定 (center player in maze cell)
             const startPos = this.mazeGenerator.getStartPosition();
             this.gameEngine.setPlayerPosition(startPos.x + 0.5, startPos.y + 0.5);
-            this.gameEngine.setPlayerRotation(0);
+            
+            // 初期方向を東向きに設定（通路がある方向）
+            this.gameEngine.setPlayerRotation(Math.PI / 2); // 90度 = 東向き
+            console.log('🎯 プレイヤー初期方向を東向き(90度)に設定');
             
             // ゲーム状態設定
             this.gameEngine.isGameStarted = true;

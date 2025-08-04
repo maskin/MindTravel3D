@@ -31,9 +31,11 @@ class GameEngine {
         this.fps = 0;
         this.frameCount = 0;
         this.lastTime = performance.now();
+        this.animationStarted = false;
     }
     
     async init() {
+        console.log('🚀🚀🚀 GAME ENGINE VERSION 20250804-fix2 LOADED 🚀🚀🚀');
         console.log('🚀 3Dエンジン初期化開始...');
         console.log('Browser info:', {
             userAgent: navigator.userAgent,
@@ -124,7 +126,7 @@ class GameEngine {
                 message: error.message,
                 stack: error.stack,
                 THREEDefined: typeof THREE,
-                canvasExists: !!document.getElementById('gameCanvas')
+                canvasExists: !!document.getElementById('gameCanvas3D')
             });
             return false;
         }
@@ -140,7 +142,7 @@ class GameEngine {
             }
             
             // 基本的なレンダラーのみ作成
-            const canvas = document.getElementById('gameCanvas');
+            const canvas = document.getElementById('gameCanvas3D');
             if (canvas && THREE.WebGLRenderer) {
                 try {
                     this.renderer = new THREE.WebGLRenderer({ 
@@ -711,38 +713,86 @@ class GameEngine {
     }
     
     updateCameraPosition() {
-        if (!this.camera) return;
-        
-        const x = this.playerPosition.x;
-        const z = this.playerPosition.z;
-        const y = this.playerHeight;
-        
-        this.camera.position.set(x, y, z);
-        
-        // カメラの向きを設定 (移動と同じ座標系)
-        const lookX = x + Math.sin(this.playerRotation);
-        const lookZ = z + Math.cos(this.playerRotation);
-        this.camera.lookAt(lookX, y, lookZ);
-        
-        // プレイヤーライトの位置と向きを更新
-        if (this.playerLight) {
-            this.playerLight.position.set(x, y, z);
-            this.playerLight.target.position.set(lookX, y - 0.5, lookZ);
-            this.playerLight.target.updateMatrixWorld();
+        try {
+            console.log('🎯 updateCameraPosition 呼び出し開始');
+            
+            if (!this.camera) {
+                console.log('🎯 カメラが存在しません');
+                return;
+            }
+            
+            console.log('🎯 カメラ存在確認OK');
+            
+            const x = this.playerPosition.x;
+            const z = this.playerPosition.z;
+            const y = this.playerHeight;
+            
+            console.log('🎯 座標取得:', x, y, z);
+            
+            this.camera.position.set(x, y, z);
+            console.log('🎯 カメラ位置設定完了');
+            
+            // カメラの向きを設定 (移動と同じ座標系)
+            const lookX = x - Math.sin(this.playerRotation);
+            const lookZ = z + Math.cos(this.playerRotation);
+            console.log('🎯 lookAt座標計算:', lookX, y, lookZ);
+            
+            this.camera.lookAt(lookX, y, lookZ);
+            console.log('🎯 カメラlookAt完了');
+            
+            // カメラの行列を強制更新
+            this.camera.updateMatrixWorld();
+            this.camera.updateProjectionMatrix();
+            console.log('🎯 カメラ行列更新完了');
+            
+            // プレイヤーライトの位置と向きを更新
+            if (this.playerLight) {
+                this.playerLight.position.set(x, y, z);
+                this.playerLight.target.position.set(lookX, y - 0.5, lookZ);
+                this.playerLight.target.updateMatrixWorld();
+                console.log('🎯 プレイヤーライト更新完了');
+            }
+            
+            // カメラ更新後にレンダリングを強制実行
+            console.log('🎯 forceRender呼び出し開始');
+            this.forceRender();
+            console.log('🎯 forceRender呼び出し完了');
+            
+            console.log('🎯 updateCameraPosition 正常完了');
+            
+        } catch (error) {
+            console.error('🚨 updateCameraPosition でエラー発生:', error);
+            console.error('🚨 エラースタック:', error.stack);
         }
-        
-        // カメラ更新後にレンダリングを強制実行
-        this.forceRender();
-        
-        console.log('Camera lookAt coordinates:', lookX, y, lookZ);
     }
     
     // 強制レンダリング（キーボード移動の視覚的フィードバック改善）
     forceRender() {
         if (this.renderer && this.scene && this.camera) {
-            // アニメーションループを待たずに即座にレンダリング
-            requestAnimationFrame(() => {
+            console.log('🚀 強制レンダリング開始 - カメラ位置:', this.camera.position.x.toFixed(2), this.camera.position.y.toFixed(2), this.camera.position.z.toFixed(2));
+            
+            // 即座にレンダリング実行（requestAnimationFrameを使わない）
+            try {
                 this.renderer.render(this.scene, this.camera);
+                console.log('🚀 強制レンダリング完了 - 成功');
+            } catch (renderError) {
+                console.error('🚀 強制レンダリングエラー:', renderError);
+            }
+            
+            // 追加で次フレームでもレンダリング
+            requestAnimationFrame(() => {
+                try {
+                    this.renderer.render(this.scene, this.camera);
+                    console.log('🚀 追加レンダリング完了');
+                } catch (renderError) {
+                    console.error('🚀 追加レンダリングエラー:', renderError);
+                }
+            });
+        } else {
+            console.warn('⚠️ 強制レンダリング失敗 - コンポーネント不足:', {
+                renderer: !!this.renderer,
+                scene: !!this.scene, 
+                camera: !!this.camera
             });
         }
     }
@@ -794,82 +844,40 @@ class GameEngine {
     }
     
     movePlayer(direction) {
-        if (this.isMoving) return false;
-        
-        console.log('🎯 グリッドベース移動システム v2.0 - 実行中');
-        
-        // グリッド単位移動 - 現在位置をグリッド座標に変換
-        let currentGridX = Math.floor(this.playerPosition.x);
-        let currentGridZ = Math.floor(this.playerPosition.z);
-        
-        // 移動方向を角度に基づいて決定（グリッド単位）
-        let targetGridX = currentGridX;
-        let targetGridZ = currentGridZ;
-        
-        // 現在の向きに基づいて移動方向を決定
+        console.log('🚀 NEW MOVEMENT SYSTEM v3.0 - ACTIVATED');
+        const moveStep = direction === 'forward' ? 1 : -1;
+
         const angle = this.playerRotation;
-        const normalizedAngle = ((angle + Math.PI / 4) % (Math.PI * 2));
-        let gridDirection;
+        const dx = -Math.sin(angle);
+        const dz = Math.cos(angle);
         
-        if (normalizedAngle < Math.PI / 2) {
-            gridDirection = 'north'; // 0°方向
-        } else if (normalizedAngle < Math.PI) {
-            gridDirection = 'east';  // 90°方向
-        } else if (normalizedAngle < 3 * Math.PI / 2) {
-            gridDirection = 'south'; // 180°方向
+        console.log('🚀 移動計算:', {direction, moveStep, angle: angle * 180/Math.PI, dx: dx.toFixed(3), dz: dz.toFixed(3)});
+
+        let targetGridX = Math.floor(this.playerPosition.x);
+        let targetGridZ = Math.floor(this.playerPosition.z);
+
+        // Determine dominant axis for grid-based movement
+        if (Math.abs(dx) > Math.abs(dz)) {
+            targetGridX += Math.sign(dx) * moveStep;
         } else {
-            gridDirection = 'west';  // 270°方向
+            targetGridZ += Math.sign(dz) * moveStep;
         }
-        
-        // 移動方向の適用
-        if (direction === 'forward') {
-            switch (gridDirection) {
-                case 'north': targetGridZ += 1; break;
-                case 'east':  targetGridX += 1; break;
-                case 'south': targetGridZ -= 1; break;
-                case 'west':  targetGridX -= 1; break;
-            }
-        } else if (direction === 'backward') {
-            switch (gridDirection) {
-                case 'north': targetGridZ -= 1; break;
-                case 'east':  targetGridX -= 1; break;
-                case 'south': targetGridZ += 1; break;
-                case 'west':  targetGridX += 1; break;
-            }
-        }
-        
-        console.log('グリッド移動試行:', direction, '方向:', gridDirection);
-        console.log('現在グリッド:', currentGridX, currentGridZ);
-        console.log('目標グリッド:', targetGridX, targetGridZ);
-        
-        // 目標位置の中心座標を計算（グリッドの中心）
+
         const targetWorldX = targetGridX + 0.5;
         const targetWorldZ = targetGridZ + 0.5;
-        
-        // 衝突判定チェック
+
         if (this.canMoveTo(targetWorldX, targetWorldZ)) {
-            console.log('移動前グリッド:', currentGridX, currentGridZ);
-            
-            // グリッドの中心に移動
             this.playerPosition.x = targetWorldX;
             this.playerPosition.z = targetWorldZ;
-            
-            console.log('移動後グリッド:', targetGridX, targetGridZ);
-            console.log('移動後座標:', this.playerPosition.x.toFixed(1), this.playerPosition.z.toFixed(1));
-            
             this.movementType = 'grid-move';
+
+            this.updateCameraPosition();
+            this.addMovementFeedback();
+            this.checkGoal();
+            return true;
         } else {
-            console.log('移動不可 - グリッド', targetGridX, targetGridZ, 'は壁');
             return false;
         }
-        
-        this.updateCameraPosition();
-        
-        // 移動時の軽微なカメラシェイク効果（視覚的フィードバック）
-        this.addMovementFeedback();
-        
-        this.checkGoal();
-        return true;
     }
     
     rotatePlayer(direction) {
@@ -899,7 +907,23 @@ class GameEngine {
         const snapAngle = Math.round(this.playerRotation / rotationStep) * rotationStep;
         this.playerRotation = snapAngle;
         
-        this.updateCameraPosition();
+        console.log('🎯 回転後 updateCameraPosition 呼び出し試行');
+        try {
+            this.updateCameraPosition();
+            console.log('🎯 回転後 updateCameraPosition 呼び出し成功');
+        } catch (error) {
+            console.error('🚨 回転後 updateCameraPosition 呼び出しエラー:', error);
+        }
+        
+        // 強制レンダリングで即座に視覚的フィードバックを提供
+        console.log('🎯 回転後 forceRender 直接呼び出し試行');
+        try {
+            this.forceRender();
+            console.log('🎯 回転後 forceRender 直接呼び出し成功');
+        } catch (error) {
+            console.error('🚨 回転後 forceRender 直接呼び出しエラー:', error);
+        }
+        
         console.log('90度回転:', direction, '現在の角度:', (this.playerRotation * 180 / Math.PI).toFixed(0), '度');
     }
     
@@ -953,11 +977,28 @@ class GameEngine {
     }
     
     animate() {
+        console.log('🎬 animate()関数が呼び出されました - フレーム:', this.frameCount || 0);
+        
+        // 最初の呼び出しで必ずログ出力
+        if (!this.animationStarted) {
+            this.animationStarted = true;
+            console.log('🎬 アニメーション初回開始!!! - 初期化完了');
+            console.log('🎬 レンダラー存在確認:', !!this.renderer);
+            console.log('🎬 シーン存在確認:', !!this.scene);
+            console.log('🎬 カメラ存在確認:', !!this.camera);
+        }
+        
         requestAnimationFrame(() => this.animate());
         
         // FPS計算
         this.frameCount++;
         const currentTime = performance.now();
+        
+        // 最初の数フレームでデバッグログ出力
+        if (this.frameCount <= 5) {
+            console.log('🎬 アニメーション実行中 - フレーム:', this.frameCount);
+        }
+        
         if (currentTime - this.lastTime >= 1000) {
             this.fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastTime));
             this.frameCount = 0;
@@ -972,6 +1013,19 @@ class GameEngine {
         // レンダリング
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
+            
+            // デバッグ: レンダリング実行を定期的にログ出力
+            if (this.frameCount % 120 === 0) { // 2秒ごと（60fps想定）
+                console.log('🎬 アニメーションループ実行中 - フレーム:', this.frameCount, 'FPS:', this.fps);
+                console.log('🎬 カメラ位置:', this.camera.position.x.toFixed(2), this.camera.position.y.toFixed(2), this.camera.position.z.toFixed(2));
+                console.log('🎬 プレイヤー位置:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+            }
+        } else {
+            console.warn('⚠️ レンダリングコンポーネント不足:', {
+                renderer: !!this.renderer,
+                scene: !!this.scene, 
+                camera: !!this.camera
+            });
         }
         
         // UI更新

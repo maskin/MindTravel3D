@@ -73,9 +73,16 @@ class MazeGenerator {
         // スタート地点を確実に通路にする
         this.maze[1][1] = 0;
         // スタート地点周辺に最低限の通路を確保
-        if (this.maze[1][2] === 1 && this.maze[2][1] === 1) {
-            // 両方向が壁の場合、どちらか一方を開ける
-            this.maze[1][2] = 0; // 東方向を開ける
+        // 東方向を優先的に開ける（プレイヤーの初期方向）
+        if (this.maze[1][2] === 1) {
+            this.maze[1][2] = 0; // 東方向を確実に開ける
+            console.log('🎯 東方向通路を強制的に確保');
+        }
+        
+        // それでも通路がない場合は他の方向も開ける
+        if (this.maze[1][2] === 1 && this.maze[2][1] === 1 && this.maze[0][1] === 1 && this.maze[1][0] === 1) {
+            this.maze[1][2] = 0; // 最終手段として東方向
+            console.log('🚨 緊急: すべて壁だったため東方向を強制開通');
         }
         
         // ゴール地点を確保
@@ -88,13 +95,21 @@ class MazeGenerator {
         if (goalX > 1) this.maze[goalY][goalX - 1] = 0;
         if (goalY > 1) this.maze[goalY - 1][goalX] = 0;
         
-        // デバッグ: スタート地点周辺の状態を表示
+        // デバッグ: スタート地点周辺の状態を表示（座標系修正）
         console.log('スタート地点周辺の状態:');
-        console.log('  (1,0):', this.maze[0][1] === 0 ? '通路' : '壁');
-        console.log('  (0,1):', this.maze[1][0] === 0 ? '通路' : '壁');
-        console.log('→ (1,1):', this.maze[1][1] === 0 ? '通路' : '壁', '← スタート');
-        console.log('  (2,1):', this.maze[1][2] === 0 ? '通路' : '壁');
-        console.log('  (1,2):', this.maze[2][1] === 0 ? '通路' : '壁');
+        console.log('  北(1,0):', this.maze[0][1] === 0 ? '通路' : '壁');
+        console.log('  西(0,1):', this.maze[1][0] === 0 ? '通路' : '壁');
+        console.log('→ スタート(1,1):', this.maze[1][1] === 0 ? '通路' : '壁');
+        console.log('  東(2,1):', this.maze[1][2] === 0 ? '通路' : '壁');
+        console.log('  南(1,2):', this.maze[2][1] === 0 ? '通路' : '壁');
+        
+        // 詳細デバッグ: 配列インデックス確認
+        console.log('🔍 配列詳細確認:');
+        console.log('  maze[0][1] (北):', this.maze[0][1]);
+        console.log('  maze[1][0] (西):', this.maze[1][0]);
+        console.log('  maze[1][1] (スタート):', this.maze[1][1]);
+        console.log('  maze[1][2] (東):', this.maze[1][2]);
+        console.log('  maze[2][1] (南):', this.maze[2][1]);
         
         console.log('迷路生成完了 - スタート位置(1,1)通路確保済み');
         return this.maze;
