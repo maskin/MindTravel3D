@@ -724,19 +724,24 @@ class GameEngine {
             this.playerPosition.z
         );
 
-        // 2. オイラー角を使ってカメラの向きを設定（クォータニオンが利用できないため）
-        // Y軸回転でプレイヤーの向きを設定
-        this.camera.rotation.y = this.playerRotation;
+        // 【最終修正点】
+        // 3D空間の座標系（0度が-Z方向）と、
+        // 迷路データの座標系（前が+Z方向）のズレを補正するため、
+        // 180度（Math.PI）のオフセットを加える。
+        const correctedRotation = this.playerRotation + Math.PI;
+
+        // 2. オイラー角を使ってカメラの向きを設定（補正後の角度で）
+        this.camera.rotation.y = correctedRotation;
 
         // 3. プレイヤーライトの位置と向きを更新
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
 
-            // カメラの前方向を計算（オイラー角ベース）
+            // カメラの前方向を計算（補正後の角度で）
             const targetPosition = new THREE.Vector3(
-                this.camera.position.x + Math.sin(this.playerRotation),
+                this.camera.position.x + Math.sin(correctedRotation),
                 this.camera.position.y,
-                this.camera.position.z - Math.cos(this.playerRotation)
+                this.camera.position.z - Math.cos(correctedRotation)
             );
 
             this.playerLight.target.position.copy(targetPosition);
