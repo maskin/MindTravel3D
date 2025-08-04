@@ -740,16 +740,22 @@ class GameEngine {
             this.camera.lookAt(lookX, y, lookZ);
             console.log('🎯 カメラlookAt完了');
             
-            // カメラの行列を強制更新
-            this.camera.updateMatrixWorld();
-            this.camera.updateProjectionMatrix();
+            // カメラの行列を強制更新（安全チェック付き）
+            if (typeof this.camera.updateMatrixWorld === 'function') {
+                this.camera.updateMatrixWorld();
+            }
+            if (typeof this.camera.updateProjectionMatrix === 'function') {
+                this.camera.updateProjectionMatrix();
+            }
             console.log('🎯 カメラ行列更新完了');
             
             // プレイヤーライトの位置と向きを更新
             if (this.playerLight) {
                 this.playerLight.position.set(x, y, z);
                 this.playerLight.target.position.set(lookX, y - 0.5, lookZ);
-                this.playerLight.target.updateMatrixWorld();
+                if (this.playerLight.target && typeof this.playerLight.target.updateMatrixWorld === 'function') {
+                    this.playerLight.target.updateMatrixWorld();
+                }
                 console.log('🎯 プレイヤーライト更新完了');
             }
             
