@@ -648,10 +648,10 @@ class GameEngine {
             console.log(`🎯 ${marker.name}方向マーカー: 3D(${marker.x}, ${marker.z}) maze[${marker.z}][${marker.x}]=${mazeValue}`);
         });
         
-        // プレイヤースタート位置にマーカー追加
+        // プレイヤースタート位置にマーカー追加（大きくして目立たせる）
         const startMarkerGeometry = window.ThreeCompat ?
-            window.ThreeCompat.createCylinderGeometry(0.2, 0.2, 0.1, 8) :
-            new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
+            window.ThreeCompat.createCylinderGeometry(0.4, 0.4, 0.3, 8) :
+            new THREE.CylinderGeometry(0.4, 0.4, 0.3, 8);
             
         const startMarkerMaterial = window.ThreeCompat ?
             window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
@@ -666,7 +666,7 @@ class GameEngine {
             });
         
         const startMarker = new THREE.Mesh(startMarkerGeometry, startMarkerMaterial);
-        startMarker.position.set(1.5, 0.05, 1.5);
+        startMarker.position.set(1.5, 0.15, 1.5);  // 少し高い位置に配置
         this.scene.add(startMarker);
         console.log('🎯 プレイヤースタート位置マーカー: 3D(1.5, 1.5) - マゼンタ色');
     }
@@ -961,11 +961,11 @@ class GameEngine {
 
         const rotationStep = Math.PI / 2; // 90度
 
-        // 座標系の定義に合わせ、回転方向を正しくする
-        // 右回転 (時計回り) は角度を増加させ、左回転 (反時計回り) は角度を減少させる
-        if (direction === 'right') {
+        // 【最終修正点】左右の回転方向を正しくする
+        // 左回転（反時計回り）は角度を増加させ、右回転（時計回り）は角度を減少させる
+        if (direction === 'left') {
             this.playerRotation += rotationStep;
-        } else if (direction === 'left') {
+        } else if (direction === 'right') {
             this.playerRotation -= rotationStep;
         }
 
