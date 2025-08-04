@@ -692,16 +692,39 @@ class GameEngine {
             z: (this.camera.rotation.z * 180 / Math.PI).toFixed(1) + '度'
         });
         
-        // 壁の数をカウント
+        // 壁の数をカウント + デバッグ強化
         let wallCount = 0;
         let floorCount = 0;
         let markerCount = 0;
+        let totalMeshCount = 0;
+        let unknownCount = 0;
+        
         this.scene.traverse((object) => {
-            if (object.isMesh && object.userData.type === 'wall') wallCount++;
-            if (object.isMesh && object.userData.type === 'floor') floorCount++;
-            if (object.isMesh && object.userData.type === 'marker') markerCount++;
+            if (object.isMesh) {
+                totalMeshCount++;
+                if (object.userData && object.userData.type === 'wall') {
+                    wallCount++;
+                } else if (object.userData && object.userData.type === 'floor') {
+                    floorCount++;
+                } else if (object.userData && object.userData.type === 'marker') {
+                    markerCount++;
+                } else {
+                    unknownCount++;
+                    // 最初の10個の不明オブジェクトをログ出力
+                    if (unknownCount <= 10) {
+                        console.log(`🔍 不明オブジェクト${unknownCount}:`, {
+                            type: object.type,
+                            userData: object.userData,
+                            position: object.position,
+                            geometry: object.geometry?.type
+                        });
+                    }
+                }
+            }
         });
+        
         console.log(`  - 壁メッシュ: ${wallCount}個, 床メッシュ: ${floorCount}個, マーカー: ${markerCount}個`);
+        console.log(`  - 総メッシュ数: ${totalMeshCount}個, 不明オブジェクト: ${unknownCount}個`);
     }
     
     createGoal(x, z) {
@@ -957,12 +980,16 @@ class GameEngine {
     }
     
     movePlayer(direction) {
-        const moveStep = direction === 'forward' ? 1 : -1;
+        const moveStep = direction === 'forward' ? -1 : 1;  // 符号修正: forward/backwardの定義逆転
         const angle = this.playerRotation;
 
-        // 正しい座標系に基づく移動ベクトルの計算
+        // 完全修正済み移動ベクトル計算
+        // Three.js座標系に合わせた正しい計算
+        // 0度=北(Z-), 90度=東(X+), 180度=南(Z+), 270度=西(X-)
         const moveX = Math.round(Math.sin(angle));
         const moveZ = Math.round(-Math.cos(angle));
+        
+        console.log(`🔧 修正済み移動計算: ${direction}, 角度=${angle.toFixed(2)}, moveX=${moveX}, moveZ=${moveZ}`);
 
         // 現在のグリッド座標
         const currentGridX = Math.floor(this.playerPosition.x);
