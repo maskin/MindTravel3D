@@ -850,14 +850,16 @@ class GameEngine {
     }
     
     movePlayer(direction) {
-        console.log('🚀 NEW MOVEMENT SYSTEM v3.0 - ACTIVATED');
+        console.log('🚀 NEW MOVEMENT SYSTEM v4.0 - ANGLE FIX APPLIED');
         const moveStep = direction === 'forward' ? 1 : -1;
 
         const angle = this.playerRotation;
-        const dx = -Math.sin(angle);
-        const dz = Math.cos(angle);
+        // 修正: 正しい方向ベクトル計算
+        // 0度=北(Z-), 90度=東(X+), 180度=南(Z+), 270度=西(X-)
+        const dx = Math.sin(angle);  // X軸成分（東西方向）
+        const dz = -Math.cos(angle); // Z軸成分（南北方向、Zは反転）
         
-        console.log('🚀 移動計算:', {direction, moveStep, angle: angle * 180/Math.PI, dx: dx.toFixed(3), dz: dz.toFixed(3)});
+        console.log('🔧 修正済み移動計算:', {direction, moveStep, angle: angle * 180/Math.PI, dx: dx.toFixed(3), dz: dz.toFixed(3)});
 
         let targetGridX = Math.floor(this.playerPosition.x);
         let targetGridZ = Math.floor(this.playerPosition.z);
