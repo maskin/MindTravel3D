@@ -824,8 +824,9 @@ class GameEngine {
         const moveStep = direction === 'forward' ? 1 : -1;
         const angle = this.playerRotation;
 
-        // 正しい移動方向を計算（座標系に合わせて修正）
-        const moveX = Math.round(Math.sin(angle));
+        // 【最終修正点】X方向の移動ベクトルの計算で、符号を正しくする
+        // 正しい式: (-sin, -cos)
+        const moveX = Math.round(-Math.sin(angle));
         const moveZ = Math.round(-Math.cos(angle));
 
         // 現在のグリッド座標
