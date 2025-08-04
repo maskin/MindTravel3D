@@ -15,7 +15,7 @@ class GameEngine {
         this.playerPosition = { x: 1.5, z: 1.5 };
         this.playerRotation = 0; // 0=北, π/2=東, π=南, 3π/2=西
         this.playerHeight = 1.7;
-        this.moveSpeed = 0.3; // より小さな移動ステップ
+        this.moveSpeed = 0.5; // より大きな移動ステップで視覚的に確認しやすく
         this.rotationSpeed = Math.PI / 2; // 90度
         
         // ゲーム状態
