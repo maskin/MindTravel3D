@@ -538,6 +538,7 @@ class GameEngine {
                 floor.rotation.x = -Math.PI / 2;
                 floor.position.set(x, 0, y);
                 floor.receiveShadow = true;
+                floor.userData = { type: 'floor' };
                 this.scene.add(floor);
                 
                 // 天井の作成 (add ceiling for enclosed feeling)
@@ -564,7 +565,7 @@ class GameEngine {
                     wall.position.set(x, wallHeight / 2, y);
                     wall.castShadow = true;
                     wall.receiveShadow = true;
-                    wall.userData.type = 'wall';
+                    wall.userData = { type: 'wall' };
                     this.scene.add(wall);
                     this.walls.push(wall);
                 }
@@ -649,6 +650,7 @@ class GameEngine {
             
             const markerMesh = new THREE.Mesh(markerGeometry, markerMaterial);
             markerMesh.position.set(marker.x, markerHeight / 2, marker.z);
+            markerMesh.userData = { type: 'marker' };
             this.scene.add(markerMesh);
             
             // 迷路データの値も確認
@@ -676,6 +678,7 @@ class GameEngine {
         
         const startMarker = new THREE.Mesh(startMarkerGeometry, startMarkerMaterial);
         startMarker.position.set(1.5, 0.15, 1.5);  // 少し高い位置に配置
+        startMarker.userData = { type: 'marker' };
         this.scene.add(startMarker);
         console.log('🎯 プレイヤースタート位置マーカー: 3D(1.5, 1.5) - マゼンタ色');
         
