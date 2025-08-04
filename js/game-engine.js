@@ -697,8 +697,12 @@ class GameEngine {
     }
     
     setPlayerRotation(rotation) {
-        this.playerRotation = rotation;
+        // 90度単位にスナップ（グリッド対応）
+        const rotationStep = Math.PI / 2;
+        const snapAngle = Math.round(rotation / rotationStep) * rotationStep;
+        this.playerRotation = snapAngle;
         this.updateCameraPosition();
+        console.log('プレイヤー角度設定:', (this.playerRotation * 180 / Math.PI).toFixed(0), '度');
     }
     
     updateCameraPosition() {
@@ -757,6 +761,11 @@ class GameEngine {
                 duration = 150; // 少し長めの持続時間
                 console.log('👆 壁滑り移動フィードバック:', this.movementType);
                 break;
+            case 'grid-move':
+                shakeAmount = 0.03; // グリッド移動は明確なフィードバック
+                duration = 120; // 少し長めの持続時間
+                console.log('🎯 グリッド移動フィードバック');
+                break;
             default:
                 shakeAmount = 0.02;
         }
@@ -782,59 +791,69 @@ class GameEngine {
     movePlayer(direction) {
         if (this.isMoving) return false;
         
-        let newX = this.playerPosition.x;
-        let newZ = this.playerPosition.z;
+        // グリッド単位移動 - 現在位置をグリッド座標に変換
+        let currentGridX = Math.floor(this.playerPosition.x);
+        let currentGridZ = Math.floor(this.playerPosition.z);
         
-        // 移動方向を計算 (簡単な座標系)
-        // 0度=北(+Z方向), 90度=東(+X方向), 180度=南(-Z方向), 270度=西(-X方向)
-        switch (direction) {
-            case 'forward':
-                newX += Math.sin(this.playerRotation) * this.moveSpeed;
-                newZ += Math.cos(this.playerRotation) * this.moveSpeed;
-                break;
-            case 'backward':
-                newX -= Math.sin(this.playerRotation) * this.moveSpeed;
-                newZ -= Math.cos(this.playerRotation) * this.moveSpeed;
-                break;
+        // 移動方向を角度に基づいて決定（グリッド単位）
+        let targetGridX = currentGridX;
+        let targetGridZ = currentGridZ;
+        
+        // 現在の向きに基づいて移動方向を決定
+        const angle = this.playerRotation;
+        const normalizedAngle = ((angle + Math.PI / 4) % (Math.PI * 2));
+        let gridDirection;
+        
+        if (normalizedAngle < Math.PI / 2) {
+            gridDirection = 'north'; // 0°方向
+        } else if (normalizedAngle < Math.PI) {
+            gridDirection = 'east';  // 90°方向
+        } else if (normalizedAngle < 3 * Math.PI / 2) {
+            gridDirection = 'south'; // 180°方向
+        } else {
+            gridDirection = 'west';  // 270°方向
         }
         
-        console.log('移動試行:', direction, '角度:', (this.playerRotation * 180 / Math.PI).toFixed(1), '度');
-        console.log('現在位置:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-        console.log('新位置:', newX.toFixed(2), newZ.toFixed(2));
-        console.log('移動ベクトル:', (Math.sin(this.playerRotation) * this.moveSpeed).toFixed(3), (Math.cos(this.playerRotation) * this.moveSpeed).toFixed(3));
+        // 移動方向の適用
+        if (direction === 'forward') {
+            switch (gridDirection) {
+                case 'north': targetGridZ += 1; break;
+                case 'east':  targetGridX += 1; break;
+                case 'south': targetGridZ -= 1; break;
+                case 'west':  targetGridX -= 1; break;
+            }
+        } else if (direction === 'backward') {
+            switch (gridDirection) {
+                case 'north': targetGridZ -= 1; break;
+                case 'east':  targetGridX -= 1; break;
+                case 'south': targetGridZ += 1; break;
+                case 'west':  targetGridX += 1; break;
+            }
+        }
         
-        // 衝突判定 - シンプルなチェック
-        console.log('当たり判定チェック:', newX.toFixed(2), newZ.toFixed(2));
+        console.log('グリッド移動試行:', direction, '方向:', gridDirection);
+        console.log('現在グリッド:', currentGridX, currentGridZ);
+        console.log('目標グリッド:', targetGridX, targetGridZ);
         
-        if (this.canMoveTo(newX, newZ)) {
-            // 両方向に移動可能
-            console.log('移動前:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-            this.playerPosition.x = newX;
-            this.playerPosition.z = newZ;
-            console.log('移動後(両方向):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-            this.movementType = 'normal'; // 通常移動
+        // 目標位置の中心座標を計算（グリッドの中心）
+        const targetWorldX = targetGridX + 0.5;
+        const targetWorldZ = targetGridZ + 0.5;
+        
+        // 衝突判定チェック
+        if (this.canMoveTo(targetWorldX, targetWorldZ)) {
+            console.log('移動前グリッド:', currentGridX, currentGridZ);
+            
+            // グリッドの中心に移動
+            this.playerPosition.x = targetWorldX;
+            this.playerPosition.z = targetWorldZ;
+            
+            console.log('移動後グリッド:', targetGridX, targetGridZ);
+            console.log('移動後座標:', this.playerPosition.x.toFixed(1), this.playerPosition.z.toFixed(1));
+            
+            this.movementType = 'grid-move';
         } else {
-            // 壁に沿った移動を試行
-            let moved = false;
-            
-            if (this.canMoveTo(newX, this.playerPosition.z)) {
-                console.log('移動前(Xのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-                this.playerPosition.x = newX;
-                console.log('移動後(Xのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-                this.movementType = 'slide-x'; // X方向滑り移動
-                moved = true;
-            } else if (this.canMoveTo(this.playerPosition.x, newZ)) {
-                console.log('移動前(Zのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-                this.playerPosition.z = newZ;
-                console.log('移動後(Zのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-                this.movementType = 'slide-z'; // Z方向滑り移動
-                moved = true;
-            }
-            
-            if (!moved) {
-                console.log('移動不可 - 壁にブロック');
-                return false;
-            }
+            console.log('移動不可 - グリッド', targetGridX, targetGridZ, 'は壁');
+            return false;
         }
         
         this.updateCameraPosition();
@@ -849,17 +868,19 @@ class GameEngine {
     rotatePlayer(direction) {
         if (this.isMoving) return;
         
-        // 回転方向を修正（右キーで右回転、左キーで左回転）
+        // 90度単位の回転（グリッド対応）
+        const rotationStep = Math.PI / 2; // 90度
+        
         switch (direction) {
             case 'left':
-                this.playerRotation += this.rotationSpeed; // 左回転（正の方向）
+                this.playerRotation += rotationStep; // 左回転（反時計回り）
                 break;
             case 'right':
-                this.playerRotation -= this.rotationSpeed; // 右回転（負の方向）
+                this.playerRotation -= rotationStep; // 右回転（時計回り）
                 break;
         }
         
-        // 角度を正規化
+        // 角度を正規化（0～2π）
         while (this.playerRotation < 0) {
             this.playerRotation += Math.PI * 2;
         }
@@ -867,8 +888,12 @@ class GameEngine {
             this.playerRotation -= Math.PI * 2;
         }
         
+        // 角度を90度単位にスナップ（誤差を修正）
+        const snapAngle = Math.round(this.playerRotation / rotationStep) * rotationStep;
+        this.playerRotation = snapAngle;
+        
         this.updateCameraPosition();
-        console.log('回転:', direction, '現在の角度:', (this.playerRotation * 180 / Math.PI).toFixed(1), '度');
+        console.log('90度回転:', direction, '現在の角度:', (this.playerRotation * 180 / Math.PI).toFixed(0), '度');
     }
     
     canMoveTo(x, z) {
