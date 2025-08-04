@@ -871,15 +871,16 @@ class GameEngine {
         if (this.isMoving) return;
         const rotationStep = Math.PI / 2; // 90度
 
-        // 左回転（反時計回り）は角度を減少させ、右回転（時計回り）は増加させる
+        // 【最終修正点】左右の回転方向を正しくする
+        // 左回転（反時計回り）は角度を増加させ、右回転（時計回り）は角度を減少させる
         if (direction === 'left') {
-            this.playerRotation -= rotationStep;
-        } else if (direction === 'right') {
             this.playerRotation += rotationStep;
+        } else if (direction === 'right') {
+            this.playerRotation -= rotationStep;
         }
 
         // 角度を 0 ～ 2π の範囲に正規化
-        this.playerRotation = (this.playerRotation + Math.PI * 2) % (Math.PI * 2);
+        this.playerRotation = (this.playerRotation + Math.PI * 4) % (Math.PI * 2);
 
         this.updateCameraPosition();
         console.log('🔄 プレイヤー回転:', (this.playerRotation * 180 / Math.PI).toFixed(0), '度');
