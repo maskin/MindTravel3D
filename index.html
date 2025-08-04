@@ -26,18 +26,11 @@
             
             // Set initial canvas sizes to prevent zero-dimension issues
             const canvas3D = document.getElementById('gameCanvas3D');
-            const canvasTopDown = document.getElementById('gameCanvasTopDown');
             
             if (canvas3D) {
-                canvas3D.width = canvas3D.clientWidth || 800;
-                canvas3D.height = canvas3D.clientHeight || 600;
+                canvas3D.width = window.innerWidth;
+                canvas3D.height = window.innerHeight;
                 console.log('Canvas3D size set:', canvas3D.width, 'x', canvas3D.height);
-            }
-            
-            if (canvasTopDown) {
-                canvasTopDown.width = canvasTopDown.clientWidth || 800;
-                canvasTopDown.height = canvasTopDown.clientHeight || 600;
-                console.log('CanvasTopDown size set:', canvasTopDown.width, 'x', canvasTopDown.height);
             }
             
             // Check if all required components are available
@@ -86,22 +79,14 @@
             position: relative;
             width: 100vw;
             height: 100vh;
-            display: flex;
+            display: block;
         }
         
         .view-container {
             position: relative;
-            flex: 1;
+            width: 100%;
             height: 100vh;
-            border: 2px solid #333333;
-        }
-        
-        #view3D {
-            border-right: 1px solid #555;
-        }
-        
-        #viewTopDown {
-            border-left: 1px solid #555;
+            border: none;
         }
         
         .view-title {
@@ -121,17 +106,6 @@
             width: 100%;
             height: 100%;
             background: #111111;
-            min-width: 400px;
-            min-height: 300px;
-        }
-        
-        #gameCanvasTopDown {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background: #001122;
-            min-width: 400px;
-            min-height: 300px;
         }
         
         #gameUI {
@@ -371,13 +345,9 @@
 </head>
 <body>
     <div id="gameContainer">
-        <div id="view3D" class="view-container">
-            <div class="view-title">🎮 3D立体ビュー</div>
+        <div id="view3D" class="view-container" style="flex: none; width: 100%; height: 100vh;">
+            <div class="view-title">🎮 3D迷路ゲーム</div>
             <canvas id="gameCanvas3D"></canvas>
-        </div>
-        <div id="viewTopDown" class="view-container">
-            <div class="view-title">🗺️ 俯瞰ビュー</div>
-            <canvas id="gameCanvasTopDown"></canvas>
         </div>
         
         <div id="gameUI">
@@ -517,18 +487,11 @@
         // Window resize handler to update canvas sizes
         window.addEventListener('resize', function() {
             const canvas3D = document.getElementById('gameCanvas3D');
-            const canvasTopDown = document.getElementById('gameCanvasTopDown');
             
             if (canvas3D) {
-                canvas3D.width = canvas3D.clientWidth;
-                canvas3D.height = canvas3D.clientHeight;
+                canvas3D.width = window.innerWidth;
+                canvas3D.height = window.innerHeight;
                 console.log('Canvas3D resized:', canvas3D.width, 'x', canvas3D.height);
-            }
-            
-            if (canvasTopDown) {
-                canvasTopDown.width = canvasTopDown.clientWidth;
-                canvasTopDown.height = canvasTopDown.clientHeight;
-                console.log('CanvasTopDown resized:', canvasTopDown.width, 'x', canvasTopDown.height);
             }
         });
     </script>

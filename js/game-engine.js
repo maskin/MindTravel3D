@@ -12,10 +12,10 @@ class GameEngine {
         this.lights = [];
         
         // プレイヤー設定
-        this.playerPosition = { x: 1, z: 1 };
+        this.playerPosition = { x: 1.5, z: 1.5 };
         this.playerRotation = 0; // 0=北, π/2=東, π=南, 3π/2=西
         this.playerHeight = 1.7;
-        this.moveSpeed = 1.0;
+        this.moveSpeed = 0.3; // より小さな移動ステップ
         this.rotationSpeed = Math.PI / 2; // 90度
         
         // ゲーム状態
@@ -204,9 +204,9 @@ class GameEngine {
             this.renderer = new THREE.WebGLRenderer(rendererParams);
             console.log('✅ THREE.WebGLRenderer created successfully:', this.renderer);
             
-            // Set renderer size to canvas dimensions for dual view
-            const canvasWidth = canvas.clientWidth || window.innerWidth / 2;
-            const canvasHeight = canvas.clientHeight || window.innerHeight;
+            // Set renderer size to full screen for single 3D view
+            const canvasWidth = window.innerWidth;
+            const canvasHeight = window.innerHeight;
             this.renderer.setSize(canvasWidth, canvasHeight);
             console.log('Renderer size set to:', canvasWidth, 'x', canvasHeight);
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -729,6 +729,7 @@ class GameEngine {
         let newX = this.playerPosition.x;
         let newZ = this.playerPosition.z;
         
+        // 移動方向を計算 (座標系修正)
         switch (direction) {
             case 'forward':
                 newX += Math.sin(this.playerRotation) * this.moveSpeed;
@@ -740,18 +741,29 @@ class GameEngine {
                 break;
         }
         
-        // 衝突判定
-        if (this.canMoveTo(newX, newZ)) {
+        // 衝突判定 - XとZを別々にチェックして壁に沿った移動を可能に
+        let canMoveX = this.canMoveTo(newX, this.playerPosition.z);
+        let canMoveZ = this.canMoveTo(this.playerPosition.x, newZ);
+        let canMoveBoth = this.canMoveTo(newX, newZ);
+        
+        if (canMoveBoth) {
+            // 両方向に移動可能
             this.playerPosition.x = newX;
             this.playerPosition.z = newZ;
-            this.updateCameraPosition();
-            
-            // ゴール判定
-            this.checkGoal();
-            return true;
+        } else if (canMoveX) {
+            // X方向だけ移動可能
+            this.playerPosition.x = newX;
+        } else if (canMoveZ) {
+            // Z方向だけ移動可能
+            this.playerPosition.z = newZ;
+        } else {
+            // 移動不可
+            return false;
         }
         
-        return false;
+        this.updateCameraPosition();
+        this.checkGoal();
+        return true;
     }
     
     rotatePlayer(direction) {
@@ -780,18 +792,33 @@ class GameEngine {
     canMoveTo(x, z) {
         if (!this.maze) return false;
         
-        // 四角い当たり判定
-        const margin = 0.3;
-        const positions = [
+        // より緩い当たり判定で移動しやすくする
+        const margin = 0.2; // より小さなマージン
+        
+        // プレイヤーの中心点をチェック
+        const centerGridX = Math.floor(x);
+        const centerGridZ = Math.floor(z);
+        
+        if (this.maze.isWall(centerGridX, centerGridZ)) {
+            return false;
+        }
+        
+        // プレイヤーの四隅をチェック
+        const corners = [
             { x: x - margin, z: z - margin },
             { x: x + margin, z: z - margin },
             { x: x - margin, z: z + margin },
             { x: x + margin, z: z + margin }
         ];
         
-        for (const pos of positions) {
-            const gridX = Math.floor(pos.x);
-            const gridZ = Math.floor(pos.z);
+        for (const corner of corners) {
+            const gridX = Math.floor(corner.x);
+            const gridZ = Math.floor(corner.z);
+            
+            // 境界チェック
+            if (gridX < 0 || gridZ < 0 || gridX >= this.maze.width || gridZ >= this.maze.height) {
+                return false;
+            }
             
             if (this.maze.isWall(gridX, gridZ)) {
                 return false;
@@ -862,8 +889,8 @@ class GameEngine {
         
         const canvas = document.getElementById('gameCanvas3D');
         if (canvas) {
-            const canvasWidth = canvas.clientWidth || window.innerWidth / 2;
-            const canvasHeight = canvas.clientHeight || window.innerHeight;
+            const canvasWidth = window.innerWidth;
+            const canvasHeight = window.innerHeight;
             
             this.camera.aspect = canvasWidth / canvasHeight;
             this.camera.updateProjectionMatrix();
