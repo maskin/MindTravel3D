@@ -609,8 +609,8 @@ class GameEngine {
     
     addVisualDebugMarkers(mazeData) {
         // スタート地点(1,1)周辺の4方向に色付きマーカーを追加
-        const markerHeight = 0.2;
-        const markerSize = 0.3;
+        const markerHeight = 2.0;  // 大幅に高くして見やすくする
+        const markerSize = 0.8;    // 大きくして目立たせる
         
         // 方向マーカー（プレイヤー位置から見た方向）
         const markers = [
@@ -629,6 +629,7 @@ class GameEngine {
                 window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
                     color: marker.color,
                     emissive: marker.color,
+                    emissiveIntensity: 0.8,  // 発光度を高くする
                     transparent: false
                 }) :
                 new THREE.MeshPhongMaterial({ 
@@ -960,11 +961,11 @@ class GameEngine {
 
         const rotationStep = Math.PI / 2; // 90度
 
-        // 【最終修正点】左右の回転方向を正しくする
-        // 左回転（反時計回り）は角度を増加させ、右回転（時計回り）は角度を減少させる
-        if (direction === 'left') {
+        // 座標系の定義に合わせ、回転方向を正しくする
+        // 右回転 (時計回り) は角度を増加させ、左回転 (反時計回り) は角度を減少させる
+        if (direction === 'right') {
             this.playerRotation += rotationStep;
-        } else if (direction === 'right') {
+        } else if (direction === 'left') {
             this.playerRotation -= rotationStep;
         }
 
