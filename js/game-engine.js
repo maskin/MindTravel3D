@@ -862,11 +862,21 @@ class GameEngine {
         let targetGridX = Math.floor(this.playerPosition.x);
         let targetGridZ = Math.floor(this.playerPosition.z);
 
-        // Determine dominant axis for grid-based movement
-        if (Math.abs(dx) > Math.abs(dz)) {
+        // 前後移動：プレイヤーの向いている方向に沿って移動
+        // dxとdzの両方を使用して正確な方向に移動
+        if (Math.abs(dx) > 0.7) {
+            // 主にX軸方向（東西）
             targetGridX += Math.sign(dx) * moveStep;
-        } else {
+        } else if (Math.abs(dz) > 0.7) {
+            // 主にZ軸方向（南北）
             targetGridZ += Math.sign(dz) * moveStep;
+        } else {
+            // 斜め方向の場合、より大きい方向を選択
+            if (Math.abs(dx) > Math.abs(dz)) {
+                targetGridX += Math.sign(dx) * moveStep;
+            } else {
+                targetGridZ += Math.sign(dz) * moveStep;
+            }
         }
 
         const targetWorldX = targetGridX + 0.5;
@@ -983,7 +993,10 @@ class GameEngine {
     }
     
     animate() {
-        console.log('🎬 animate()関数が呼び出されました - フレーム:', this.frameCount || 0);
+        // ログを60フレームに1回だけ出力
+        if ((this.frameCount || 0) % 60 === 0) {
+            console.log('🎬 animate()関数 - フレーム:', this.frameCount || 0);
+        }
         
         // 最初の呼び出しで必ずログ出力
         if (!this.animationStarted) {
@@ -1000,10 +1013,7 @@ class GameEngine {
         this.frameCount++;
         const currentTime = performance.now();
         
-        // 最初の数フレームでデバッグログ出力
-        if (this.frameCount <= 5) {
-            console.log('🎬 アニメーション実行中 - フレーム:', this.frameCount);
-        }
+        // デバッグログは削減済み
         
         if (currentTime - this.lastTime >= 1000) {
             this.fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastTime));
@@ -1020,11 +1030,9 @@ class GameEngine {
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
             
-            // デバッグ: レンダリング実行を定期的にログ出力
-            if (this.frameCount % 120 === 0) { // 2秒ごと（60fps想定）
-                console.log('🎬 アニメーションループ実行中 - フレーム:', this.frameCount, 'FPS:', this.fps);
-                console.log('🎬 カメラ位置:', this.camera.position.x.toFixed(2), this.camera.position.y.toFixed(2), this.camera.position.z.toFixed(2));
-                console.log('🎬 プレイヤー位置:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+            // FPS情報を30秒に1回出力
+            if (this.frameCount % 1800 === 0) { // 30秒ごと（60fps想定）
+                console.log('🎬 FPS:', this.fps, 'カメラ位置:', this.camera.position.x.toFixed(2), this.camera.position.y.toFixed(2), this.camera.position.z.toFixed(2));
             }
         } else {
             console.warn('⚠️ レンダリングコンポーネント不足:', {
