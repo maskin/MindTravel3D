@@ -724,21 +724,20 @@ class GameEngine {
             this.playerPosition.z
         );
 
-        // 2. クォータニオンを使ってカメラの向きを安全に設定する
-        // Y軸（上方向）を軸として、プレイヤーの回転角度だけ回転させる
-        const quaternion = new THREE.Quaternion();
-        quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.playerRotation);
-
-        // 既存のカメラの回転を、計算したクォータニオンで完全に上書きする
-        this.camera.quaternion.copy(quaternion);
+        // 2. オイラー角を使ってカメラの向きを設定（クォータニオンが利用できないため）
+        // Y軸回転でプレイヤーの向きを設定
+        this.camera.rotation.y = this.playerRotation;
 
         // 3. プレイヤーライトの位置と向きを更新
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
 
-            const targetPosition = new THREE.Vector3(0, 0, -1);
-            targetPosition.applyQuaternion(this.camera.quaternion);
-            targetPosition.add(this.camera.position);
+            // カメラの前方向を計算（オイラー角ベース）
+            const targetPosition = new THREE.Vector3(
+                this.camera.position.x + Math.sin(this.playerRotation),
+                this.camera.position.y,
+                this.camera.position.z - Math.cos(this.playerRotation)
+            );
 
             this.playerLight.target.position.copy(targetPosition);
             this.playerLight.target.updateMatrixWorld();
