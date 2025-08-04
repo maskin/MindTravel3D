@@ -751,20 +751,28 @@ class GameEngine {
         console.log('当たり判定チェック:', newX.toFixed(2), newZ.toFixed(2));
         
         if (this.canMoveTo(newX, newZ)) {
-            // 移動可能
+            // 両方向に移動可能
             console.log('移動前:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
             this.playerPosition.x = newX;
             this.playerPosition.z = newZ;
-            console.log('移動後:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+            console.log('移動後(両方向):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
         } else {
             // 壁に沿った移動を試行
+            let moved = false;
+            
             if (this.canMoveTo(newX, this.playerPosition.z)) {
-                console.log('X方向のみ移動');
+                console.log('移動前(Xのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
                 this.playerPosition.x = newX;
+                console.log('移動後(Xのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+                moved = true;
             } else if (this.canMoveTo(this.playerPosition.x, newZ)) {
-                console.log('Z方向のみ移動');
+                console.log('移動前(Zのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
                 this.playerPosition.z = newZ;
-            } else {
+                console.log('移動後(Zのみ):', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+                moved = true;
+            }
+            
+            if (!moved) {
                 console.log('移動不可 - 壁にブロック');
                 return false;
             }
@@ -806,50 +814,23 @@ class GameEngine {
             return false;
         }
         
-        const margin = 0.3; // マージンを少し大きく
+        // 非常にシンプルなチェック - 中心点のみ
+        const gridX = Math.floor(x);
+        const gridZ = Math.floor(z);
         
-        // プレイヤーの中心点をチェック
-        const centerGridX = Math.floor(x);
-        const centerGridZ = Math.floor(z);
-        
-        console.log('中心点チェック:', centerGridX, centerGridZ);
+        console.log('シンプルチェック:', x.toFixed(2), z.toFixed(2), '-> グリッド:', gridX, gridZ);
         
         // 境界チェック
-        if (centerGridX < 0 || centerGridZ < 0 || centerGridX >= this.maze.width || centerGridZ >= this.maze.height) {
-            console.log('境界外です');
+        if (gridX < 0 || gridZ < 0 || gridX >= this.maze.width || gridZ >= this.maze.height) {
+            console.log('境界外:', gridX, gridZ);
             return false;
         }
         
-        if (this.maze.isWall(centerGridX, centerGridZ)) {
-            console.log('中心が壁です');
-            return false;
-        }
+        // 壁チェック
+        const isWall = this.maze.isWall(gridX, gridZ);
+        console.log('グリッド(' + gridX + ',' + gridZ + ')は壁か?', isWall);
         
-        // シンプルなチェック - 四隅ではなく主要方向のみ
-        const checkPoints = [
-            { x: x - margin, z: z },
-            { x: x + margin, z: z },
-            { x: x, z: z - margin },
-            { x: x, z: z + margin }
-        ];
-        
-        for (const point of checkPoints) {
-            const gridX = Math.floor(point.x);
-            const gridZ = Math.floor(point.z);
-            
-            if (gridX < 0 || gridZ < 0 || gridX >= this.maze.width || gridZ >= this.maze.height) {
-                console.log('チェックポイントが境界外:', gridX, gridZ);
-                return false;
-            }
-            
-            if (this.maze.isWall(gridX, gridZ)) {
-                console.log('チェックポイントが壁:', gridX, gridZ);
-                return false;
-            }
-        }
-        
-        console.log('移動可能');
-        return true;
+        return !isWall;
     }
     
     checkGoal() {
