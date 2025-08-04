@@ -724,24 +724,18 @@ class GameEngine {
             this.playerPosition.z
         );
 
-        // 【最終修正点】
-        // 3D空間の座標系（0度が-Z方向）と、
-        // 迷路データの座標系（前が+Z方向）のズレを補正するため、
-        // 180度（Math.PI）のオフセットを加える。
-        const correctedRotation = this.playerRotation + Math.PI;
-
-        // 2. オイラー角を使ってカメラの向きを設定（補正後の角度で）
-        this.camera.rotation.y = correctedRotation;
+        // 【最終修正点】不要になった180度の補正を削除し、プレイヤーの回転を直接使う
+        this.camera.rotation.y = this.playerRotation;
 
         // 3. プレイヤーライトの位置と向きを更新
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
 
-            // カメラの前方向を計算（補正後の角度で）
+            // カメラの前方向を計算（直接の角度で）
             const targetPosition = new THREE.Vector3(
-                this.camera.position.x + Math.sin(correctedRotation),
+                this.camera.position.x + Math.sin(this.playerRotation),
                 this.camera.position.y,
-                this.camera.position.z - Math.cos(correctedRotation)
+                this.camera.position.z - Math.cos(this.playerRotation)
             );
 
             this.playerLight.target.position.copy(targetPosition);
@@ -864,12 +858,16 @@ class GameEngine {
     }
     
     rotatePlayer(direction) {
+        if (this.isMoving) return;
+
         const rotationStep = Math.PI / 2; // 90度
 
+        // 【最終修正点】左右の回転方向を正しくする
+        // 左回転（反時計回り）は角度を減少させ、右回転（時計回り）は増加させる
         if (direction === 'left') {
-            this.playerRotation += rotationStep;
-        } else if (direction === 'right') {
             this.playerRotation -= rotationStep;
+        } else if (direction === 'right') {
+            this.playerRotation += rotationStep;
         }
 
         // 角度を 0 ～ 2π の範囲に正規化
