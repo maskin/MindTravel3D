@@ -939,26 +939,28 @@ class GameEngine {
             return false;
         }
         
-        // 非常にシンプルなチェック - 中心点のみ
+        // 3D座標系に合わせた座標変換
+        // 3D描画: maze[y][x] → Three.js(x, Y, y)
+        // プレイヤー: (x, z) → maze座標では (x, z) → maze[z][x]
         const gridX = Math.floor(x);
-        const gridZ = Math.floor(z);
+        const gridY = Math.floor(z);  // zがmazeのy座標に対応
         
-        console.log('シンプルチェック:', x.toFixed(2), z.toFixed(2), '-> グリッド:', gridX, gridZ);
+        console.log('🔧 修正済み座標チェック:', x.toFixed(2), z.toFixed(2), '-> グリッド:', gridX, gridY);
         
         // 境界チェック
-        if (gridX < 0 || gridZ < 0 || gridX >= this.maze.width || gridZ >= this.maze.height) {
-            console.log('境界外:', gridX, gridZ);
+        if (gridX < 0 || gridY < 0 || gridX >= this.maze.width || gridY >= this.maze.height) {
+            console.log('境界外:', gridX, gridY);
             return false;
         }
         
-        // 壁チェック - 座標系デバッグ
-        console.log('🔍 座標系デバッグ:');
+        // 壁チェック - 正しい座標系
+        console.log('🔍 修正済み座標系デバッグ:');
         console.log('  プレイヤー3D座標: (' + x + ', ' + z + ')');
-        console.log('  計算グリッド座標: (' + gridX + ', ' + gridZ + ')');
-        console.log('  迷路配列アクセス: maze[' + gridZ + '][' + gridX + ']');
+        console.log('  計算グリッド座標: (x=' + gridX + ', y=' + gridY + ')');
+        console.log('  迷路配列アクセス: maze[' + gridY + '][' + gridX + ']');
         
-        const isWall = this.maze.isWall(gridX, gridZ);
-        console.log('グリッド(' + gridX + ',' + gridZ + ')は壁か?', isWall);
+        const isWall = this.maze.isWall(gridX, gridY);
+        console.log('グリッド(' + gridX + ',' + gridY + ')は壁か?', isWall);
         
         return !isWall;
     }
