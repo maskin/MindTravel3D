@@ -212,9 +212,9 @@ class GameManager {
             const startPos = this.mazeGenerator.getStartPosition();
             this.gameEngine.setPlayerPosition(startPos.x + 0.5, startPos.y + 0.5);
             
-            // 初期方向を東向きに設定（通路がある方向）
-            this.gameEngine.setPlayerRotation(Math.PI / 2); // 90度 = 東向き
-            console.log('🎯 プレイヤー初期方向を東向き(90度)に設定');
+            // 初期方向を北向きに設定（0度 = 北向き）
+            this.gameEngine.setPlayerRotation(0); // 0度 = 北向き
+            console.log('🎯 プレイヤー初期方向を北向き(0度)に設定');
             
             // ゲーム状態設定
             this.gameEngine.isGameStarted = true;
