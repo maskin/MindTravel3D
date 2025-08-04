@@ -850,40 +850,31 @@ class GameEngine {
     }
     
     movePlayer(direction) {
-        console.log('🚀 NEW MOVEMENT SYSTEM v4.0 - ANGLE FIX APPLIED');
-        const moveStep = direction === 'forward' ? 1 : -1;
-
-        const angle = this.playerRotation;
-        // 修正: 正しい方向ベクトル計算
-        // 0度=北(Z-), 90度=東(X+), 180度=南(Z+), 270度=西(X-)
-        const dx = Math.sin(angle);  // X軸成分（東西方向）
-        const dz = -Math.cos(angle); // Z軸成分（南北方向、Zは反転）
-        
-        console.log('🔧 修正済み移動計算:', {direction, moveStep, angle: angle * 180/Math.PI, dx: dx.toFixed(3), dz: dz.toFixed(3)});
-
-        let targetGridX = Math.floor(this.playerPosition.x);
-        let targetGridZ = Math.floor(this.playerPosition.z);
-
-        // 前後移動：プレイヤーの向いている方向に沿って移動
-        // dxとdzの両方を使用して正確な方向に移動
-        if (Math.abs(dx) > 0.7) {
-            // 主にX軸方向（東西）
-            targetGridX += Math.sign(dx) * moveStep;
-        } else if (Math.abs(dz) > 0.7) {
-            // 主にZ軸方向（南北）
-            targetGridZ += Math.sign(dz) * moveStep;
-        } else {
-            // 斜め方向の場合、より大きい方向を選択
-            if (Math.abs(dx) > Math.abs(dz)) {
-                targetGridX += Math.sign(dx) * moveStep;
-            } else {
-                targetGridZ += Math.sign(dz) * moveStep;
-            }
+        if (this.isMoving) {
+            return false;
         }
 
+        const moveStep = direction === 'forward' ? 1 : -1;
+        const angle = this.playerRotation;
+
+        // 回転角度から移動ベクトルを直接計算 (結果は-1, 0, 1の整数になる)
+        // 0度=北(Z-), 90度=東(X+), 180度=南(Z+), 270度=西(X-)
+        const moveX = Math.round(Math.sin(angle));   // X軸成分（東西方向）
+        const moveZ = Math.round(-Math.cos(angle));  // Z軸成分（南北方向、Zは反転）
+
+        // 現在のグリッド座標
+        const currentGridX = Math.floor(this.playerPosition.x);
+        const currentGridZ = Math.floor(this.playerPosition.z);
+
+        // 移動先のグリッド座標を計算
+        const targetGridX = currentGridX + (moveX * moveStep);
+        const targetGridZ = currentGridZ + (moveZ * moveStep);
+
+        // 移動先のワールド座標 (グリッドの中心)
         const targetWorldX = targetGridX + 0.5;
         const targetWorldZ = targetGridZ + 0.5;
 
+        // 衝突判定
         if (this.canMoveTo(targetWorldX, targetWorldZ)) {
             this.playerPosition.x = targetWorldX;
             this.playerPosition.z = targetWorldZ;
@@ -894,6 +885,8 @@ class GameEngine {
             this.checkGoal();
             return true;
         } else {
+            // 移動できなかった場合でも、壁に向かってぶつかるフィードバックを追加
+            this.addMovementFeedback();
             return false;
         }
     }

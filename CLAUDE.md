@@ -152,11 +152,41 @@ rotatePlayer(direction) {
 - Intuitive 4-direction compass system
 
 ### Current Architecture Status
-- **MVP Phase**: ✅ Complete
-- **Movement System**: ✅ Grid-based implementation complete
+- **MVP Phase**: ✅ Complete (2025-08-04)
+- **Movement System**: ✅ Grid-based implementation complete with angle calculation fix
 - **Multi-platform Support**: ✅ Keyboard, mouse, touch controls unified
 - **PWA Features**: ✅ Offline capability and installability
 - **Performance**: ✅ 60fps, 3s load time, 500MB memory targets met
+- **Critical Bug Fixes**: ✅ Direction calculation corrected (2025-08-04)
+
+## Critical Issue Resolution History
+
+### 2025-08-04: Movement Direction Bug Fix (CRITICAL)
+
+**Issue**: プレイヤーが前進キー（↑）を押すと左に移動する重大な方向バグ
+
+**Root Cause**: `movePlayer`関数内の角度計算エラー
+```javascript
+// 問題のあったコード
+const dx = -Math.sin(angle);
+const dz = Math.cos(angle);
+// 90度（東向き）でdx=-1.000（西方向）になっていた
+```
+
+**Solution**: 正しい三角関数計算に修正
+```javascript
+// 修正後のコード
+const dx = Math.sin(angle);   // X軸成分（東西方向）
+const dz = -Math.cos(angle);  // Z軸成分（南北方向、Zは反転）
+// 90度（東向き）でdx=1.000（東方向）に正常化
+```
+
+**座標系定義**:
+- 0度=北(Z-), 90度=東(X+), 180度=南(Z+), 270度=西(X-)
+- 迷路配列: `maze[y][x]` = `maze[z][x]`
+- プレイヤー座標: `(x, z)`
+
+**Deployment**: GitHub Pages (`v=20250804-angle-fix`)
 
 ## Development Guidelines
 
@@ -183,6 +213,10 @@ rotatePlayer(direction) {
 - Verification system tests rendering, memory usage, and performance
 - Error simulation tools for testing error handling paths
 - Movement debugging shows grid coordinates and compass direction
+- **Key Debug Patterns**:
+  - Console logs show movement calculations: `🔧 修正済み移動計算: {direction, angle, dx, dz}`
+  - Coordinate system verification: `🔍 座標系デバッグ: プレイヤー3D座標/計算グリッド座標`
+  - Animation system monitoring with reduced log frequency (60-frame intervals)
 
 ### Code Style
 - Japanese comments in source code (project is Japan-focused)
