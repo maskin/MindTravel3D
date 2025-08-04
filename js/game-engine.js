@@ -713,31 +713,27 @@ class GameEngine {
     }
     
     updateCameraPosition() {
-        if (!this.camera) {
-            return;
-        }
+        if (!this.camera) return;
 
-        // 1. カメラの位置をプレイヤーデータに正確に合わせる
         this.camera.position.set(
             this.playerPosition.x,
             this.playerHeight,
             this.playerPosition.z
         );
 
-        // 【最終修正点】不要になった180度の補正を削除し、プレイヤーの回転を直接使う
+        // データが正常になったため、補正なしでプレイヤーの回転をそのまま適用
         this.camera.rotation.y = this.playerRotation;
 
-        // 3. プレイヤーライトの位置と向きを更新
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
-
-            // カメラの前方向を計算（直接の角度で）
+            
+            // オイラー角ベースでライト方向を計算
             const targetPosition = new THREE.Vector3(
                 this.camera.position.x + Math.sin(this.playerRotation),
                 this.camera.position.y,
                 this.camera.position.z - Math.cos(this.playerRotation)
             );
-
+            
             this.playerLight.target.position.copy(targetPosition);
             this.playerLight.target.updateMatrixWorld();
         }
@@ -824,9 +820,8 @@ class GameEngine {
         const moveStep = direction === 'forward' ? 1 : -1;
         const angle = this.playerRotation;
 
-        // 【最終修正点】X方向の移動ベクトルの計算で、符号を正しくする
-        // 正しい式: (-sin, -cos)
-        const moveX = Math.round(-Math.sin(angle));
+        // 正しい座標系に基づく移動ベクトルの計算
+        const moveX = Math.round(Math.sin(angle));
         const moveZ = Math.round(-Math.cos(angle));
 
         // 現在のグリッド座標
@@ -860,10 +855,8 @@ class GameEngine {
     
     rotatePlayer(direction) {
         if (this.isMoving) return;
-
         const rotationStep = Math.PI / 2; // 90度
 
-        // 【最終修正点】左右の回転方向を正しくする
         // 左回転（反時計回り）は角度を減少させ、右回転（時計回り）は増加させる
         if (direction === 'left') {
             this.playerRotation -= rotationStep;
@@ -872,12 +865,8 @@ class GameEngine {
         }
 
         // 角度を 0 ～ 2π の範囲に正規化
-        this.playerRotation = this.playerRotation % (Math.PI * 2);
-        if (this.playerRotation < 0) {
-            this.playerRotation += Math.PI * 2;
-        }
+        this.playerRotation = (this.playerRotation + Math.PI * 2) % (Math.PI * 2);
 
-        // カメラの状態を即座に更新
         this.updateCameraPosition();
         console.log('🔄 プレイヤー回転:', (this.playerRotation * 180 / Math.PI).toFixed(0), '度');
     }
