@@ -710,9 +710,9 @@ class GameEngine {
         
         this.camera.position.set(x, y, z);
         
-        // カメラの向きを設定 (座標系修正)
+        // カメラの向きを設定 (移動と同じ座標系)
         const lookX = x + Math.sin(this.playerRotation);
-        const lookZ = z - Math.cos(this.playerRotation); // Z軸を逆に
+        const lookZ = z + Math.cos(this.playerRotation);
         this.camera.lookAt(lookX, y, lookZ);
         
         // プレイヤーライトの位置と向きを更新
@@ -729,43 +729,45 @@ class GameEngine {
         let newX = this.playerPosition.x;
         let newZ = this.playerPosition.z;
         
-        // 移動方向を計算 (正しい座標系)
-        // 0度=北(マイナスZ方向), 90度=東(プラスX方向)
+        // 移動方向を計算 (簡単な座標系)
+        // 0度=北(+Z方向), 90度=東(+X方向), 180度=南(-Z方向), 270度=西(-X方向)
         switch (direction) {
             case 'forward':
                 newX += Math.sin(this.playerRotation) * this.moveSpeed;
-                newZ -= Math.cos(this.playerRotation) * this.moveSpeed; // Z軸を逆に
+                newZ += Math.cos(this.playerRotation) * this.moveSpeed;
                 break;
             case 'backward':
                 newX -= Math.sin(this.playerRotation) * this.moveSpeed;
-                newZ += Math.cos(this.playerRotation) * this.moveSpeed; // Z軸を逆に
+                newZ -= Math.cos(this.playerRotation) * this.moveSpeed;
                 break;
         }
         
-        console.log('移動試行:', direction, '現在位置:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2), '新位置:', newX.toFixed(2), newZ.toFixed(2));
+        console.log('移動試行:', direction, '角度:', (this.playerRotation * 180 / Math.PI).toFixed(1), '度');
+        console.log('現在位置:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+        console.log('新位置:', newX.toFixed(2), newZ.toFixed(2));
+        console.log('移動ベクトル:', (Math.sin(this.playerRotation) * this.moveSpeed).toFixed(3), (Math.cos(this.playerRotation) * this.moveSpeed).toFixed(3));
         
-        // 衝突判定 - XとZを別々にチェックして壁に沿った移動を可能に
-        let canMoveX = this.canMoveTo(newX, this.playerPosition.z);
-        let canMoveZ = this.canMoveTo(this.playerPosition.x, newZ);
-        let canMoveBoth = this.canMoveTo(newX, newZ);
+        // 衝突判定 - シンプルなチェック
+        console.log('当たり判定チェック:', newX.toFixed(2), newZ.toFixed(2));
         
-        if (canMoveBoth) {
-            // 両方向に移動可能
+        if (this.canMoveTo(newX, newZ)) {
+            // 移動可能
+            console.log('移動前:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
             this.playerPosition.x = newX;
             this.playerPosition.z = newZ;
-            console.log('移動成功（両方向）:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-        } else if (canMoveX) {
-            // X方向だけ移動可能
-            this.playerPosition.x = newX;
-            console.log('移動成功（X方向のみ）:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
-        } else if (canMoveZ) {
-            // Z方向だけ移動可能
-            this.playerPosition.z = newZ;
-            console.log('移動成功（Z方向のみ）:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
+            console.log('移動後:', this.playerPosition.x.toFixed(2), this.playerPosition.z.toFixed(2));
         } else {
-            // 移動不可
-            console.log('移動不可 - 壁にブロックされました');
-            return false;
+            // 壁に沿った移動を試行
+            if (this.canMoveTo(newX, this.playerPosition.z)) {
+                console.log('X方向のみ移動');
+                this.playerPosition.x = newX;
+            } else if (this.canMoveTo(this.playerPosition.x, newZ)) {
+                console.log('Z方向のみ移動');
+                this.playerPosition.z = newZ;
+            } else {
+                console.log('移動不可 - 壁にブロック');
+                return false;
+            }
         }
         
         this.updateCameraPosition();
@@ -799,41 +801,54 @@ class GameEngine {
     }
     
     canMoveTo(x, z) {
-        if (!this.maze) return false;
+        if (!this.maze) {
+            console.log('迷路データがありません');
+            return false;
+        }
         
-        // より緩い当たり判定で移動しやすくする
-        const margin = 0.2; // より小さなマージン
+        const margin = 0.3; // マージンを少し大きく
         
         // プレイヤーの中心点をチェック
         const centerGridX = Math.floor(x);
         const centerGridZ = Math.floor(z);
         
-        if (this.maze.isWall(centerGridX, centerGridZ)) {
+        console.log('中心点チェック:', centerGridX, centerGridZ);
+        
+        // 境界チェック
+        if (centerGridX < 0 || centerGridZ < 0 || centerGridX >= this.maze.width || centerGridZ >= this.maze.height) {
+            console.log('境界外です');
             return false;
         }
         
-        // プレイヤーの四隅をチェック
-        const corners = [
-            { x: x - margin, z: z - margin },
-            { x: x + margin, z: z - margin },
-            { x: x - margin, z: z + margin },
-            { x: x + margin, z: z + margin }
+        if (this.maze.isWall(centerGridX, centerGridZ)) {
+            console.log('中心が壁です');
+            return false;
+        }
+        
+        // シンプルなチェック - 四隅ではなく主要方向のみ
+        const checkPoints = [
+            { x: x - margin, z: z },
+            { x: x + margin, z: z },
+            { x: x, z: z - margin },
+            { x: x, z: z + margin }
         ];
         
-        for (const corner of corners) {
-            const gridX = Math.floor(corner.x);
-            const gridZ = Math.floor(corner.z);
+        for (const point of checkPoints) {
+            const gridX = Math.floor(point.x);
+            const gridZ = Math.floor(point.z);
             
-            // 境界チェック
             if (gridX < 0 || gridZ < 0 || gridX >= this.maze.width || gridZ >= this.maze.height) {
+                console.log('チェックポイントが境界外:', gridX, gridZ);
                 return false;
             }
             
             if (this.maze.isWall(gridX, gridZ)) {
+                console.log('チェックポイントが壁:', gridX, gridZ);
                 return false;
             }
         }
         
+        console.log('移動可能');
         return true;
     }
     
