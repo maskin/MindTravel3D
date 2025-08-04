@@ -14,7 +14,7 @@ class GameEngine {
         // プレイヤー設定
         this.playerPosition = { x: 1.5, z: 1.5 };
         this.playerRotation = 0; // 0=北, π/2=東, π=南, 3π/2=西
-        this.playerHeight = 5.0;  // カメラを高く上げて俯瞰視点にする
+        this.playerHeight = 8.0;  // カメラをより高く上げて迷路全体が見えるようにする
         this.moveSpeed = 0.5; // より大きな移動ステップで視覚的に確認しやすく
         this.rotationSpeed = Math.PI / 2; // 90度
         
@@ -529,6 +529,10 @@ class GameEngine {
         // 迷路の作成
         for (let y = 0; y < mazeData.length; y++) {
             for (let x = 0; x < mazeData[y].length; x++) {
+                // デバッグ: 最初の数個の座標で配置確認
+                if (y < 3 && x < 3) {
+                    console.log(`🏗️ 配置確認: maze[${y}][${x}]=${mazeData[y][x]} → 3D座標(${x}, Y, ${y})`);
+                }
                 // 床の作成
                 const floor = new THREE.Mesh(floorGeometry, floorMaterial);
                 floor.rotation.x = -Math.PI / 2;
@@ -545,6 +549,10 @@ class GameEngine {
                 
                 // 壁の作成
                 if (mazeData[y][x] === 1) {
+                    // デバッグ: 壁配置確認
+                    if (y < 3 && x < 3) {
+                        console.log(`🧱 壁配置: maze[${y}][${x}]=1 → 3D壁座標(${x}, Y, ${y})`);
+                    }
                     // Add some variation in wall heights for visual interest
                     const heightVariation = (Math.sin(x * 0.7) + Math.cos(y * 0.5)) * 0.3;
                     const wallHeight = 3 + heightVariation;
@@ -556,6 +564,7 @@ class GameEngine {
                     wall.position.set(x, wallHeight / 2, y);
                     wall.castShadow = true;
                     wall.receiveShadow = true;
+                    wall.userData.type = 'wall';
                     this.scene.add(wall);
                     this.walls.push(wall);
                 }
@@ -669,6 +678,27 @@ class GameEngine {
         startMarker.position.set(1.5, 0.15, 1.5);  // 少し高い位置に配置
         this.scene.add(startMarker);
         console.log('🎯 プレイヤースタート位置マーカー: 3D(1.5, 1.5) - マゼンタ色');
+        
+        // デバッグ: 3D迷路の描画確認用
+        console.log('📐 3D迷路描画状態確認:');
+        console.log('  - シーン内オブジェクト数:', this.scene.children.length);
+        console.log('  - カメラ位置:', this.camera.position);
+        console.log('  - カメラ角度:', {
+            x: (this.camera.rotation.x * 180 / Math.PI).toFixed(1) + '度',
+            y: (this.camera.rotation.y * 180 / Math.PI).toFixed(1) + '度',
+            z: (this.camera.rotation.z * 180 / Math.PI).toFixed(1) + '度'
+        });
+        
+        // 壁の数をカウント
+        let wallCount = 0;
+        let floorCount = 0;
+        let markerCount = 0;
+        this.scene.traverse((object) => {
+            if (object.isMesh && object.userData.type === 'wall') wallCount++;
+            if (object.isMesh && object.userData.type === 'floor') floorCount++;
+            if (object.isMesh && object.userData.type === 'marker') markerCount++;
+        });
+        console.log(`  - 壁メッシュ: ${wallCount}個, 床メッシュ: ${floorCount}個, マーカー: ${markerCount}個`);
     }
     
     createGoal(x, z) {
@@ -828,8 +858,8 @@ class GameEngine {
         // カメラをプレイヤーと同じ方向に向ける（前方が上になるように）
         this.camera.rotation.y = this.playerRotation;
         
-        // カメラを真下向きにして俯瞰マップのような見た目にする
-        this.camera.rotation.x = -Math.PI / 2; // 90度下向き（真下）
+        // 確実に迷路が見える角度（30度下向き）
+        this.camera.rotation.x = -Math.PI / 6; // 30度下向き
 
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
