@@ -274,18 +274,18 @@ class GameEngine {
     initLights() {
         // Ambient light - より明るく（一人称視点で迷路が見えるように）
         const ambientLight = window.ThreeCompat ?
-            window.ThreeCompat.createAmbientLight(0x606080, 0.8) :
-            new THREE.AmbientLight(0x606080, 0.8);
+            window.ThreeCompat.createAmbientLight(0x505070, 0.6) :
+            new THREE.AmbientLight(0x505070, 0.6);
         this.scene.add(ambientLight);
         
         // Enhanced player light (flashlight effect) - Use enhanced spot light if available
         if (THREE.SpotLight) {
-            this.playerLight = new THREE.SpotLight(0xffffcc, 3.0, 15, Math.PI / 3, 0.3);
+            this.playerLight = new THREE.SpotLight(0xffffcc, 2.8, 14, Math.PI / 3, 0.4);
             this.playerLight.castShadow = true;
             this.playerLight.shadow.mapSize.width = 1024;
             this.playerLight.shadow.mapSize.height = 1024;
             this.playerLight.shadow.camera.near = 0.1;
-            this.playerLight.shadow.camera.far = 15;
+            this.playerLight.shadow.camera.far = 14;
             this.scene.add(this.playerLight);
         }
         
@@ -886,7 +886,6 @@ class GameEngine {
         
         // 水平視点（0度 = まっすぐ前を見る）
         this.camera.rotation.x = 0;
-        this.camera.rotation.z = 0;
 
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
