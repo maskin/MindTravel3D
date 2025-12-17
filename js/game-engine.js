@@ -980,24 +980,23 @@ class GameEngine {
     }
     
     movePlayer(direction) {
-        const moveStep = direction === 'forward' ? -1 : 1;  // 符号修正: forward/backwardの定義逆転
+        const moveStep = direction === 'forward' ? 1 : -1;  // forward=前進(+1), backward=後退(-1)
         const angle = this.playerRotation;
 
-        // 完全修正済み移動ベクトル計算
-        // Three.js座標系に合わせた正しい計算
+        // Three.js座標系に合わせた移動ベクトル計算
         // 0度=北(Z-), 90度=東(X+), 180度=南(Z+), 270度=西(X-)
-        const moveX = Math.round(Math.sin(angle));
-        const moveZ = Math.round(-Math.cos(angle));
+        const moveX = Math.round(Math.sin(angle)) * moveStep;
+        const moveZ = Math.round(-Math.cos(angle)) * moveStep;
         
-        console.log(`🔧 修正済み移動計算: ${direction}, 角度=${angle.toFixed(2)}, moveX=${moveX}, moveZ=${moveZ}`);
+        console.log(`🔧 移動計算: ${direction}, 角度=${angle.toFixed(2)}度, moveX=${moveX}, moveZ=${moveZ}`);
 
         // 現在のグリッド座標
         const currentGridX = Math.floor(this.playerPosition.x);
         const currentGridZ = Math.floor(this.playerPosition.z);
 
-        // 移動先のグリッド座標を計算
-        const targetGridX = currentGridX + (moveX * moveStep);
-        const targetGridZ = currentGridZ + (moveZ * moveStep);
+        // 移動先のグリッド座標を計算（moveXとmoveZには既に方向が含まれている）
+        const targetGridX = currentGridX + moveX;
+        const targetGridZ = currentGridZ + moveZ;
 
         // 移動先のワールド座標 (グリッドの中心)
         const targetWorldX = targetGridX + 0.5;
