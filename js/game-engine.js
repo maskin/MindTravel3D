@@ -14,7 +14,7 @@ class GameEngine {
         // プレイヤー設定
         this.playerPosition = { x: 1.5, z: 1.5 };
         this.playerRotation = 0; // 0=北, π/2=東, π=南, 3π/2=西
-        this.playerHeight = 1.6;  // 人間の目線の高さ（一人称視点）
+        this.playerHeight = 1.5;  // 人間の目線の高さ（床と天井の中間）
         this.moveSpeed = 0.5; // より大きな移動ステップで視覚的に確認しやすく
         this.rotationSpeed = Math.PI / 2; // 90度
         
@@ -272,10 +272,10 @@ class GameEngine {
     }
     
     initLights() {
-        // Ambient light - より明るく（一人称視点で迷路が見えるように）
+        // Ambient light - さらに明るく（迷路を明確に見えるように）
         const ambientLight = window.ThreeCompat ?
-            window.ThreeCompat.createAmbientLight(0x505070, 0.6) :
-            new THREE.AmbientLight(0x505070, 0.6);
+            window.ThreeCompat.createAmbientLight(0x808090, 0.9) :
+            new THREE.AmbientLight(0x808090, 0.9);
         this.scene.add(ambientLight);
         
         // Enhanced player light (flashlight effect) - Use enhanced spot light if available
@@ -330,12 +330,12 @@ class GameEngine {
         canvas.height = 128;
         const ctx = canvas.getContext('2d');
         
-        // Create stone-like wall texture
-        ctx.fillStyle = '#666666';
+        // Create stone-like wall texture - 明るくして見やすく
+        ctx.fillStyle = '#aaaaaa';
         ctx.fillRect(0, 0, 128, 128);
         
         // Add stone block pattern
-        ctx.strokeStyle = '#444444';
+        ctx.strokeStyle = '#888888';
         ctx.lineWidth = 2;
         for (let i = 0; i < 128; i += 32) {
             ctx.beginPath();
@@ -351,7 +351,7 @@ class GameEngine {
         
         // Add random noise for texture
         for (let i = 0; i < 200; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? '#777777' : '#555555';
+            ctx.fillStyle = Math.random() > 0.5 ? '#bbbbbb' : '#999999';
             ctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
         }
         
@@ -391,13 +391,13 @@ class GameEngine {
         const wallMaterial = window.ThreeCompat ?
             window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
                 map: wallTexture,
-                color: 0x888888,
+                color: 0xcccccc,
                 shininess: 30,
                 transparent: false
             }) :
             new THREE.MeshPhongMaterial({ 
                 map: wallTexture,
-                color: 0x888888,
+                color: 0xcccccc,
                 shininess: 30,
                 transparent: false
             });
@@ -408,11 +408,11 @@ class GameEngine {
         floorCanvas.height = 64;
         const floorCtx = floorCanvas.getContext('2d');
         
-        floorCtx.fillStyle = '#222233';
+        floorCtx.fillStyle = '#4444 55';
         floorCtx.fillRect(0, 0, 64, 64);
         
         // Add floor tile pattern
-        floorCtx.strokeStyle = '#111122';
+        floorCtx.strokeStyle = '#333344';
         floorCtx.lineWidth = 1;
         for (let i = 0; i < 64; i += 16) {
             floorCtx.beginPath();
@@ -458,13 +458,13 @@ class GameEngine {
         const floorMaterial = window.ThreeCompat ?
             window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
                 map: floorTexture,
-                color: 0x333344,
+                color: 0x666677,
                 shininess: 10,
                 transparent: false
             }) :
             new THREE.MeshPhongMaterial({ 
                 map: floorTexture,
-                color: 0x333344,
+                color: 0x666677,
                 shininess: 10,
                 transparent: false
             });
@@ -475,12 +475,12 @@ class GameEngine {
         ceilingCanvas.height = 64;
         const ceilingCtx = ceilingCanvas.getContext('2d');
         
-        ceilingCtx.fillStyle = '#111122';
+        ceilingCtx.fillStyle = '#333344';
         ceilingCtx.fillRect(0, 0, 64, 64);
         
         // Add rough ceiling texture
         for (let i = 0; i < 100; i++) {
-            ceilingCtx.fillStyle = Math.random() > 0.5 ? '#151527' : '#0d0d18';
+            ceilingCtx.fillStyle = Math.random() > 0.5 ? '#404050' : '#2a2a3a';
             ceilingCtx.fillRect(Math.random() * 64, Math.random() * 64, 3, 3);
         }
         
@@ -515,13 +515,13 @@ class GameEngine {
         const ceilingMaterial = window.ThreeCompat ?
             window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
                 map: ceilingTexture,
-                color: 0x222233,
+                color: 0x555566,
                 shininess: 5,
                 transparent: false
             }) :
             new THREE.MeshPhongMaterial({ 
                 map: ceilingTexture,
-                color: 0x222233,
+                color: 0x555566,
                 shininess: 5,
                 transparent: false
             });
@@ -884,8 +884,8 @@ class GameEngine {
         // 一人称視点: 水平方向を向く
         this.camera.rotation.y = this.playerRotation;
         
-        // 水平視点（0度 = まっすぐ前を見る）
-        this.camera.rotation.x = 0;
+        // 水平視点（わずかに下向き = 迷路の床と壁が見える）
+        this.camera.rotation.x = -0.1; // 約6度下向き
 
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
