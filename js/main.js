@@ -228,7 +228,23 @@ class GameManager {
             
         } catch (error) {
             console.error('ゲーム開始エラー:', error);
-            this.uiManager.showError('ゲームの開始に失敗しました:\n' + error.message);
+            console.error('エラー詳細:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
+            
+            // エラーが発生してもゲームを続行可能にする
+            // 3D迷路が作成されていれば、ゲームは開始可能
+            if (this.gameEngine && this.gameEngine.scene && this.gameEngine.scene.children.length > 5) {
+                console.log('⚠️ エラーはあったが3D迷路は作成済み - ゲームを続行');
+                this.gameEngine.isGameStarted = true;
+                this.gameEngine.gameWon = false;
+                this.uiManager.hideStartMenu();
+                this.uiManager.closeModal();
+            } else {
+                this.uiManager.showError('ゲームの開始に失敗しました:\n' + error.message);
+            }
         }
     }
     

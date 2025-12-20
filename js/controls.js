@@ -40,7 +40,11 @@ class Controls {
     }
     
     onKeyDown(event) {
-        if (!this.gameEngine.isGameStarted) return;
+        // より柔軟なゲーム開始チェック: 迷路が存在すればプレイ可能
+        const canPlay = this.gameEngine.isGameStarted || 
+                       (this.gameEngine.maze && this.gameEngine.scene && this.gameEngine.scene.children.length > 5);
+        
+        if (!canPlay) return;
         
         this.keys[event.code] = true;
         
@@ -145,7 +149,11 @@ class Controls {
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             
-            if (!this.gameEngine.isGameStarted || touchCount !== 1) return;
+            // より柔軟なゲーム開始チェック: 迷路が存在すればプレイ可能
+            const canPlay = this.gameEngine.isGameStarted || 
+                           (this.gameEngine.maze && this.gameEngine.scene && this.gameEngine.scene.children.length > 5);
+            
+            if (!canPlay || touchCount !== 1) return;
             
             const touch = e.touches[0];
             const deltaX = touch.clientX - touchStartX;
@@ -189,7 +197,12 @@ class Controls {
             // タッチ開始
             button.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                if (!this.gameEngine.isGameStarted) return;
+                
+                // より柔軟なゲーム開始チェック: 迷路が存在すればプレイ可能
+                const canPlay = this.gameEngine.isGameStarted || 
+                               (this.gameEngine.maze && this.gameEngine.scene && this.gameEngine.scene.children.length > 5);
+                
+                if (!canPlay) return;
                 
                 button.style.background = 'rgba(255, 255, 255, 0.4)';
                 
