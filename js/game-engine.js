@@ -14,7 +14,7 @@ class GameEngine {
         // プレイヤー設定
         this.playerPosition = { x: 1.5, z: 1.5 };
         this.playerRotation = 0; // 0=北, π/2=東, π=南, 3π/2=西
-        this.playerHeight = 8.0;  // カメラをより高く上げて迷路全体が見えるようにする
+        this.playerHeight = 1.5;  // 人間の目線の高さ（床と天井の中間）
         this.moveSpeed = 0.5; // より大きな移動ステップで視覚的に確認しやすく
         this.rotationSpeed = Math.PI / 2; // 90度
         
@@ -212,7 +212,7 @@ class GameEngine {
             this.renderer.setSize(canvasWidth, canvasHeight);
             console.log('Renderer size set to:', canvasWidth, 'x', canvasHeight);
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            this.renderer.setClearColor(0x000000);
+            this.renderer.setClearColor(0x0a0a15); // 暗い青色の背景（完全な黒ではない）
             this.renderer.shadowMap.enabled = true;
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             this.renderer.fog = true;
@@ -252,10 +252,10 @@ class GameEngine {
     initScene() {
         this.scene = new THREE.Scene();
         
-        // Fog設定（利用可能な場合のみ）
+        // Fog設定（利用可能な場合のみ）- より明るく調整
         if (THREE.Fog) {
             console.log('✅ THREE.Fog available - adding atmospheric fog');
-            this.scene.fog = new THREE.Fog(0x000011, 3, 15);
+            this.scene.fog = new THREE.Fog(0x0a0a15, 5, 20); // より明るい色、より遠いフォグ
         } else {
             console.log('⚠️ THREE.Fog not available - skipping fog effect');
         }
@@ -272,41 +272,41 @@ class GameEngine {
     }
     
     initLights() {
-        // Ambient light - Use compatibility layer
+        // Ambient light - さらに明るく（迷路を明確に見えるように）
         const ambientLight = window.ThreeCompat ?
-            window.ThreeCompat.createAmbientLight(0x404080, 0.4) :
-            new THREE.AmbientLight(0x404080, 0.4);
+            window.ThreeCompat.createAmbientLight(0x808090, 0.9) :
+            new THREE.AmbientLight(0x808090, 0.9);
         this.scene.add(ambientLight);
         
         // Enhanced player light (flashlight effect) - Use enhanced spot light if available
         if (THREE.SpotLight) {
-            this.playerLight = new THREE.SpotLight(0xffffcc, 2.5, 12, Math.PI / 3, 0.4);
+            this.playerLight = new THREE.SpotLight(0xffffcc, 2.8, 14, Math.PI / 3, 0.4);
             this.playerLight.castShadow = true;
             this.playerLight.shadow.mapSize.width = 1024;
             this.playerLight.shadow.mapSize.height = 1024;
             this.playerLight.shadow.camera.near = 0.1;
-            this.playerLight.shadow.camera.far = 12;
+            this.playerLight.shadow.camera.far = 14;
             this.scene.add(this.playerLight);
         }
         
         // Overhead lighting - Use compatibility layer for enhanced shadows
         const topLight = window.ThreeCompat ?
-            window.ThreeCompat.createDirectionalLight(0x6666aa, 0.3) :
-            new THREE.DirectionalLight(0x6666aa, 0.3);
+            window.ThreeCompat.createDirectionalLight(0x8888cc, 0.5) :
+            new THREE.DirectionalLight(0x8888cc, 0.5);
         topLight.position.set(0, 10, 0);
         topLight.castShadow = false; // Keep performance good
         this.scene.add(topLight);
         
         // Atmospheric side lighting
         const sideLight1 = window.ThreeCompat ?
-            window.ThreeCompat.createDirectionalLight(0x4444aa, 0.2) :
-            new THREE.DirectionalLight(0x4444aa, 0.2);
+            window.ThreeCompat.createDirectionalLight(0x6666aa, 0.3) :
+            new THREE.DirectionalLight(0x6666aa, 0.3);
         sideLight1.position.set(10, 5, 10);
         this.scene.add(sideLight1);
         
         const sideLight2 = window.ThreeCompat ?
-            window.ThreeCompat.createDirectionalLight(0x4444aa, 0.2) :
-            new THREE.DirectionalLight(0x4444aa, 0.2);
+            window.ThreeCompat.createDirectionalLight(0x6666aa, 0.3) :
+            new THREE.DirectionalLight(0x6666aa, 0.3);
         sideLight2.position.set(-10, 5, -10);
         this.scene.add(sideLight2);
         
@@ -330,12 +330,12 @@ class GameEngine {
         canvas.height = 128;
         const ctx = canvas.getContext('2d');
         
-        // Create stone-like wall texture
-        ctx.fillStyle = '#666666';
+        // Create stone-like wall texture - 明るくして見やすく
+        ctx.fillStyle = '#aaaaaa';
         ctx.fillRect(0, 0, 128, 128);
         
         // Add stone block pattern
-        ctx.strokeStyle = '#444444';
+        ctx.strokeStyle = '#888888';
         ctx.lineWidth = 2;
         for (let i = 0; i < 128; i += 32) {
             ctx.beginPath();
@@ -351,7 +351,7 @@ class GameEngine {
         
         // Add random noise for texture
         for (let i = 0; i < 200; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? '#777777' : '#555555';
+            ctx.fillStyle = Math.random() > 0.5 ? '#bbbbbb' : '#999999';
             ctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
         }
         
@@ -391,13 +391,13 @@ class GameEngine {
         const wallMaterial = window.ThreeCompat ?
             window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
                 map: wallTexture,
-                color: 0x888888,
+                color: 0xcccccc,
                 shininess: 30,
                 transparent: false
             }) :
             new THREE.MeshPhongMaterial({ 
                 map: wallTexture,
-                color: 0x888888,
+                color: 0xcccccc,
                 shininess: 30,
                 transparent: false
             });
@@ -408,11 +408,11 @@ class GameEngine {
         floorCanvas.height = 64;
         const floorCtx = floorCanvas.getContext('2d');
         
-        floorCtx.fillStyle = '#222233';
+        floorCtx.fillStyle = '#4444 55';
         floorCtx.fillRect(0, 0, 64, 64);
         
         // Add floor tile pattern
-        floorCtx.strokeStyle = '#111122';
+        floorCtx.strokeStyle = '#333344';
         floorCtx.lineWidth = 1;
         for (let i = 0; i < 64; i += 16) {
             floorCtx.beginPath();
@@ -458,13 +458,13 @@ class GameEngine {
         const floorMaterial = window.ThreeCompat ?
             window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
                 map: floorTexture,
-                color: 0x333344,
+                color: 0x666677,
                 shininess: 10,
                 transparent: false
             }) :
             new THREE.MeshPhongMaterial({ 
                 map: floorTexture,
-                color: 0x333344,
+                color: 0x666677,
                 shininess: 10,
                 transparent: false
             });
@@ -475,12 +475,12 @@ class GameEngine {
         ceilingCanvas.height = 64;
         const ceilingCtx = ceilingCanvas.getContext('2d');
         
-        ceilingCtx.fillStyle = '#111122';
+        ceilingCtx.fillStyle = '#333344';
         ceilingCtx.fillRect(0, 0, 64, 64);
         
         // Add rough ceiling texture
         for (let i = 0; i < 100; i++) {
-            ceilingCtx.fillStyle = Math.random() > 0.5 ? '#151527' : '#0d0d18';
+            ceilingCtx.fillStyle = Math.random() > 0.5 ? '#404050' : '#2a2a3a';
             ceilingCtx.fillRect(Math.random() * 64, Math.random() * 64, 3, 3);
         }
         
@@ -515,13 +515,13 @@ class GameEngine {
         const ceilingMaterial = window.ThreeCompat ?
             window.ThreeCompat.createMaterial('MeshPhongMaterial', { 
                 map: ceilingTexture,
-                color: 0x222233,
+                color: 0x555566,
                 shininess: 5,
                 transparent: false
             }) :
             new THREE.MeshPhongMaterial({ 
                 map: ceilingTexture,
-                color: 0x222233,
+                color: 0x555566,
                 shininess: 5,
                 transparent: false
             });
@@ -613,7 +613,8 @@ class GameEngine {
         });
         
         // 3D表現の視覚的デバッグ：スタート地点周辺に色付きマーカー追加
-        this.addVisualDebugMarkers(mazeData);
+        // デバッグマーカーは開発時のみ有効化
+        // this.addVisualDebugMarkers(mazeData);
         console.log('3D迷路作成完了');
     }
     
@@ -880,12 +881,12 @@ class GameEngine {
             this.playerPosition.z
         );
 
-        // 俯瞰視点でのカメラ向き修正
-        // カメラをプレイヤーと同じ方向に向ける（前方が上になるように）
-        this.camera.rotation.y = this.playerRotation;
+        // 一人称視点: 水平方向を向く
+        // Three.jsではY軸回転が反時計回りのため、移動ベクトルと合わせるには符号を反転する
+        this.camera.rotation.y = -this.playerRotation;
         
-        // 確実に迷路が見える角度（30度下向き）
-        this.camera.rotation.x = -Math.PI / 6; // 30度下向き
+        // 水平視点（わずかに下向き = 迷路の床と壁が見える）
+        this.camera.rotation.x = -0.1; // 約6度下向き
 
         if (this.playerLight) {
             this.playerLight.position.copy(this.camera.position);
@@ -980,24 +981,23 @@ class GameEngine {
     }
     
     movePlayer(direction) {
-        const moveStep = direction === 'forward' ? -1 : 1;  // 符号修正: forward/backwardの定義逆転
+        const moveStep = direction === 'forward' ? 1 : -1;  // forward=前進(+1), backward=後退(-1)
         const angle = this.playerRotation;
 
-        // 完全修正済み移動ベクトル計算
-        // Three.js座標系に合わせた正しい計算
+        // Three.js座標系に合わせた移動ベクトル計算
         // 0度=北(Z-), 90度=東(X+), 180度=南(Z+), 270度=西(X-)
-        const moveX = Math.round(Math.sin(angle));
-        const moveZ = Math.round(-Math.cos(angle));
+        const moveX = Math.round(Math.sin(angle)) * moveStep;
+        const moveZ = Math.round(-Math.cos(angle)) * moveStep;
         
-        console.log(`🔧 修正済み移動計算: ${direction}, 角度=${angle.toFixed(2)}, moveX=${moveX}, moveZ=${moveZ}`);
+        console.log(`🔧 移動計算: ${direction}, 角度=${angle.toFixed(2)}度, moveX=${moveX}, moveZ=${moveZ}`);
 
         // 現在のグリッド座標
         const currentGridX = Math.floor(this.playerPosition.x);
         const currentGridZ = Math.floor(this.playerPosition.z);
 
-        // 移動先のグリッド座標を計算
-        const targetGridX = currentGridX + (moveX * moveStep);
-        const targetGridZ = currentGridZ + (moveZ * moveStep);
+        // 移動先のグリッド座標を計算（moveXとmoveZには既に方向が含まれている）
+        const targetGridX = currentGridX + moveX;
+        const targetGridZ = currentGridZ + moveZ;
 
         // 移動先のワールド座標 (グリッドの中心)
         const targetWorldX = targetGridX + 0.5;
@@ -1025,12 +1025,12 @@ class GameEngine {
 
         const rotationStep = Math.PI / 2; // 90度
 
-        // 【最終修正点】左右の回転方向を正しくする
-        // 左回転（反時計回り）は角度を増加させ、右回転（時計回り）は角度を減少させる
+        // 左回転（反時計回り）は角度を減少、右回転（時計回り）は角度を増加
+        // 座標系: 0=北, π/2=東, π=南, 3π/2=西
         if (direction === 'left') {
-            this.playerRotation += rotationStep;
-        } else if (direction === 'right') {
             this.playerRotation -= rotationStep;
+        } else if (direction === 'right') {
+            this.playerRotation += rotationStep;
         }
 
         // 角度を 0 ～ 2π の範囲に正規化
