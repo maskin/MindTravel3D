@@ -882,7 +882,8 @@ class GameEngine {
         );
 
         // 一人称視点: 水平方向を向く
-        this.camera.rotation.y = this.playerRotation;
+        // Three.jsではY軸回転が反時計回りのため、移動ベクトルと合わせるには符号を反転する
+        this.camera.rotation.y = -this.playerRotation;
         
         // 水平視点（わずかに下向き = 迷路の床と壁が見える）
         this.camera.rotation.x = -0.1; // 約6度下向き
@@ -1024,12 +1025,12 @@ class GameEngine {
 
         const rotationStep = Math.PI / 2; // 90度
 
-        // 【最終修正点】左右の回転方向を正しくする
-        // 左回転（反時計回り）は角度を増加させ、右回転（時計回り）は角度を減少させる
+        // 左回転（反時計回り）は角度を減少、右回転（時計回り）は角度を増加
+        // 座標系: 0=北, π/2=東, π=南, 3π/2=西
         if (direction === 'left') {
-            this.playerRotation += rotationStep;
-        } else if (direction === 'right') {
             this.playerRotation -= rotationStep;
+        } else if (direction === 'right') {
+            this.playerRotation += rotationStep;
         }
 
         // 角度を 0 ～ 2π の範囲に正規化
